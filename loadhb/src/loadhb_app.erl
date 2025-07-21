@@ -10,7 +10,9 @@
 -export([start/2, stop/1]).
 
 start(_StartType, _StartArgs) ->
-    loadhb_sup:start_link().
+    % Start the supervisor first
+    {ok, Pid} = loadhb_sup:start_link(),
+    {ok, Pid}.
 
 stop(_State) ->
     ok.

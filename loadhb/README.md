@@ -6,4 +6,8 @@ HyperBEAM load and integration tests
 Build
 -----
 
-    $ rebar3 compile
+```sh
+export HYPERBEAM_PATH="/path/to/HyperBEAM"
+./build.sh
+```
+
