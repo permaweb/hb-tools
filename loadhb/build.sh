@@ -1,17 +1,11 @@
 #!/bin/bash
 
-# Set default HyperBEAM path if not provided
-HYPERBEAM_PATH=${HYPERBEAM_PATH:-"../../HyperBEAM"}
+HYPERBEAM_PATH="./HyperBEAM"
 
-# Validate that the HyperBEAM path exists
-if [ ! -d "$HYPERBEAM_PATH" ]; then
-    echo "Error: HyperBEAM path not found: $HYPERBEAM_PATH"
-    echo "Please set HYPERBEAM_PATH environment variable to the correct path"
-    echo "Example: HYPERBEAM_PATH=/path/to/HyperBEAM ./build.sh"
-    exit 1
-fi
-
-echo "Using HyperBEAM path: $HYPERBEAM_PATH"
+git clone https://github.com/permaweb/HyperBEAM ./HyperBEAM
+cd HyperBEAM
+git checkout "edge"
+cd ..
 
 # Clean build directories for fresh start
 echo "Cleaning previous build..."
@@ -69,3 +63,5 @@ echo "-define(HB_BUILD_TIME, $(date +%s))." >> _build/hb_buildinfo.hrl
 echo "Selected HyperBEAM modules copied successfully!"
 echo "Running rebar3 compile..."
 rebar3 compile
+
+rm -rf $HYPERBEAM_PATH
