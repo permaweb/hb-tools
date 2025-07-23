@@ -6,7 +6,7 @@
 %%% 
 %%% @end
 %%%-------------------------------------------------------------------
--module(int_genesis_eval).
+-module(flow_genesis_eval).
 -export([run/0]).
 
 -spec run() -> ok | {error, term()}.
