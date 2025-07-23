@@ -35,17 +35,12 @@ get_environment(EnvName) ->
 
 -spec run_flows(environment()) -> ok | {error, term()}.
 run_flows(#{flows := Flows}) ->
-    io:format("Running flows: ~p~n", [Flows]),
-    io:format("Starting HTTP client...~n"),
     case hb_http_client:start_link(#{}) of
         {ok, _Pid} ->
-            io:format("HTTP client started successfully~n"),
             run_flows_list(Flows);
         {error, {already_started, _Pid}} ->
-            io:format("HTTP client already started~n"),
             run_flows_list(Flows);
         {error, Reason} ->
-            io:format("Failed to start HTTP client: ~p~n", [Reason]),
             {error, {http_client_start_failed, Reason}}
     end.
 
@@ -53,18 +48,14 @@ run_flows(#{flows := Flows}) ->
 run_flows_list([]) ->
     ok;
 run_flows_list([Flow | Rest]) ->
-    io:format("Executing flow: ~p~n", [Flow]),
     try
         case Flow:run() of
             ok ->
                 run_flows_list(Rest);
             {error, Reason} ->
-                io:format("Flow ~p failed: ~p~n", [Flow, Reason]),
                 {error, {flow_failed, Flow, Reason}}
         end
     catch
-        Error:CatchReason:Stacktrace ->
-            io:format("Flow ~p crashed: ~p:~p~n", [Flow, Error, CatchReason]),
-            io:format("Stacktrace: ~p~n", [Stacktrace]),
+        Error:CatchReason:_Stacktrace ->
             {error, {flow_crashed, Flow, Error, CatchReason}}
     end.

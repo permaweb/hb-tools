@@ -35,6 +35,13 @@ for module in $HB_MODULES; do
         cp "$HYPERBEAM_PATH/src/${module}.erl" "src/hb_imported/"
         # Fix include paths in the copied module
         sed -i 's|-include("include/|-include("hb_imported/|g' "src/hb_imported/${module}.erl"
+        
+        # Fix hb_keccak NIF loading issues
+        if [ "$module" = "hb_keccak" ]; then
+            echo "    Fixing hb_keccak NIF loading..."
+            sed -i '/-on_load/d' "src/hb_imported/${module}.erl"
+            sed -i '/init() ->/,/erlang:load_nif/c\%% Stub implementation - no NIF loading' "src/hb_imported/${module}.erl"
+        fi
     else
         echo "  Warning: ${module}.erl not found in $HYPERBEAM_PATH/src/"
     fi
