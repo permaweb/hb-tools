@@ -13,56 +13,59 @@ fi
 
 echo "Using HyperBEAM path: $HYPERBEAM_PATH"
 
-# Clean and prepare the apps/hb directory
-rm -rf apps/hb
-mkdir -p apps/hb/src
-mkdir -p apps/hb/include
+# Clean build directories for fresh start
+echo "Cleaning previous build..."
+rm -rf _build src/hb_imported include apps
 
-# Copy HyperBEAM source files
-echo "Copying HyperBEAM source files..."
-cp -r "$HYPERBEAM_PATH/src"/* apps/hb/src/
-cp -r "$HYPERBEAM_PATH/src/include"/* apps/hb/include/
-
-# Copy the app file with modifications
-cp "$HYPERBEAM_PATH/src/hb.app.src" apps/hb/src/
-
-# Copy other necessary files
-if [ -d "$HYPERBEAM_PATH/priv" ]; then
-    mkdir -p apps/hb/priv
-    cp -r "$HYPERBEAM_PATH/priv"/* apps/hb/priv/
+# Parse module configuration
+if [ ! -f "hb_modules.config" ]; then
+    echo "Error: hb_modules.config not found"
+    exit 1
 fi
 
-# Copy native code if needed
-if [ -d "$HYPERBEAM_PATH/native" ]; then
-    mkdir -p apps/hb/native
-    cp -r "$HYPERBEAM_PATH/native"/* apps/hb/native/
-fi
+# Extract module list from config file - only actual module names
+HB_MODULES=$(grep -A 100 "{hb_modules," hb_modules.config | grep -E "^\s*[a-z][a-zA-Z0-9_]*" | grep -v "}]" | sed 's/.*\(^[[:space:]]*\)\([a-z][a-zA-Z0-9_]*\).*/\2/' | sort | uniq)
+HB_INCLUDES=$(grep -A 10 "{hb_include_files," hb_modules.config | grep -o '"[^"]*"' | tr -d '"')
 
-# Copy Makefile for WAMR setup
-if [ -f "$HYPERBEAM_PATH/Makefile" ]; then
-    cp "$HYPERBEAM_PATH/Makefile" ./
-fi
+echo "Modules to copy: $HB_MODULES"
+echo "Include files to copy: $HB_INCLUDES"
 
-# Setup WAMR (WebAssembly Micro Runtime) if not already built
-if [ ! -d "_build/wamr" ]; then
-    echo "Setting up WAMR..."
-    if [ -f "Makefile" ]; then
-        make wamr || echo "WAMR build failed, continuing without native compilation"
+# Prepare directories for selective imports
+mkdir -p src/hb_imported
+
+# Copy only the needed HyperBEAM modules
+echo "Copying selected HyperBEAM modules..."
+for module in $HB_MODULES; do
+    if [ -f "$HYPERBEAM_PATH/src/${module}.erl" ]; then
+        echo "  Copying ${module}.erl"
+        cp "$HYPERBEAM_PATH/src/${module}.erl" "src/hb_imported/"
+        # Fix include paths in the copied module
+        sed -i 's|-include("include/|-include("hb_imported/|g' "src/hb_imported/${module}.erl"
     else
-        echo "Makefile not found, skipping WAMR setup"
+        echo "  Warning: ${module}.erl not found in $HYPERBEAM_PATH/src/"
     fi
-fi
+done
+
+# Copy needed include files
+echo "Copying selected include files..."
+for include in $HB_INCLUDES; do
+    if [ -f "$HYPERBEAM_PATH/src/include/${include}" ]; then
+        echo "  Copying ${include}"
+        cp "$HYPERBEAM_PATH/src/include/${include}" "src/hb_imported/"
+        # Fix include paths in the copied include files
+        sed -i 's|-include("include/|-include("hb_imported/|g' "src/hb_imported/${include}"
+    else
+        echo "  Warning: ${include} not found in $HYPERBEAM_PATH/src/include/"
+    fi
+done
 
 # Create build info header file
 echo "Creating build info header..."
 mkdir -p _build
-mkdir -p apps/hb/_build
 echo '-define(HB_BUILD_SOURCE, <<"local-build">>).' > _build/hb_buildinfo.hrl
 echo '-define(HB_BUILD_SOURCE_SHORT, <<"local">>).' >> _build/hb_buildinfo.hrl
 echo "-define(HB_BUILD_TIME, $(date +%s))." >> _build/hb_buildinfo.hrl
-# Also create it in the location expected by the apps/hb source
-cp _build/hb_buildinfo.hrl apps/hb/_build/hb_buildinfo.hrl
 
-echo "HyperBEAM files copied successfully!"
+echo "Selected HyperBEAM modules copied successfully!"
 echo "Running rebar3 compile..."
 rebar3 compile

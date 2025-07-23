@@ -21,3 +21,5 @@ rebar3.crashdump
 apps/
 priv/
 cache-mainnet/
+hyperbeam-key.json
+hb_imported

@@ -49,15 +49,21 @@ send_message(ServerURL, Message, Wallet) ->
     {ok, term()} | {error, term()}.
 send_message(ServerURL, Message, Wallet, Opts) ->
     try
+        io:format("[hb_client] Step A: Starting build_and_sign_message...~n"),
         Result = build_and_sign_message(Message, Wallet, Opts),
+        io:format("[hb_client] Step B: build_and_sign_message result: ~p~n", [Result]),
         case Result of
             {ok, SignedMessage} ->
+                io:format("[hb_client] Step C: Calling send_signed_message...~n"),
                 send_signed_message(ServerURL, SignedMessage, Opts);
             {error, BuildError} ->
+                io:format("[hb_client] Step D: Build error: ~p~n", [BuildError]),
                 {error, BuildError}
         end
     catch
-        Error:Reason ->
+        Error:Reason:Stacktrace ->
+            io:format("[hb_client] CATCH: Error ~p:~p~n", [Error, Reason]),
+            io:format("[hb_client] CATCH: Stacktrace: ~p~n", [Stacktrace]),
             {error, {Error, Reason}}
     end.
 
@@ -67,18 +73,24 @@ send_message(ServerURL, Message, Wallet, Opts) ->
 -spec build_message(map(), map()) -> {ok, map()} | {error, term()}.
 build_message(Message, Opts) ->
     try
+        io:format("[hb_client] build_message: Checking required fields...~n"),
         RequiredFields = [<<"path">>, <<"method">>],
         FieldCheck = check_required_fields(Message, RequiredFields),
         case FieldCheck of
             ok ->
+                io:format("[hb_client] build_message: Calling hb_message:convert...~n"),
                 Codec = <<"httpsig@1.0">>,
                 BuiltMessage = hb_message:convert(Message, Codec, Opts),
+                io:format("[hb_client] build_message: hb_message:convert succeeded~n"),
                 {ok, BuiltMessage};
             {error, BuildReason} ->
+                io:format("[hb_client] build_message: Field check failed: ~p~n", [BuildReason]),
                 {error, BuildReason}
         end
     catch
-        Error:CatchReason ->
+        Error:CatchReason:Stacktrace ->
+            io:format("[hb_client] build_message CATCH: ~p:~p~n", [Error, CatchReason]),
+            io:format("[hb_client] build_message Stacktrace: ~p~n", [Stacktrace]),
             {error, {Error, CatchReason}}
     end.
 
@@ -88,11 +100,16 @@ build_message(Message, Opts) ->
 -spec sign_message(map(), ar_wallet:wallet()) -> {ok, map()} | {error, term()}.
 sign_message(Message, Wallet) ->
     try
+        io:format("[hb_client] sign_message: Creating opts with wallet...~n"),
         Opts = #{priv_wallet => Wallet},
+        io:format("[hb_client] sign_message: Calling hb_message:commit...~n"),
         SignedMessage = hb_message:commit(Message, Opts),
+        io:format("[hb_client] sign_message: hb_message:commit succeeded~n"),
         {ok, SignedMessage}
     catch
-        Error:Reason ->
+        Error:Reason:Stacktrace ->
+            io:format("[hb_client] sign_message CATCH: ~p:~p~n", [Error, Reason]),
+            io:format("[hb_client] sign_message Stacktrace: ~p~n", [Stacktrace]),
             {error, {Error, Reason}}
     end.
 
@@ -111,15 +128,20 @@ send_signed_message(ServerURL, SignedMessage) ->
     {ok, term()} | {error, term()}.
 send_signed_message(ServerURL, SignedMessage, Opts) ->
     try
+        io:format("[hb_client] send_signed_message: Parsing server URL: ~p~n", [ServerURL]),
         UrlResult = parse_server_url(ServerURL),
         case UrlResult of
             {ok, {Host, Port, Path}} ->
+                io:format("[hb_client] send_signed_message: URL parsed successfully, calling send_to_parsed_url~n"),
                 send_to_parsed_url(SignedMessage, Host, Port, Path, Opts);
             {error, ParseError} ->
+                io:format("[hb_client] send_signed_message: URL parse error: ~p~n", [ParseError]),
                 {error, ParseError}
         end
     catch
-        Error:CatchReason ->
+        Error:CatchReason:Stacktrace ->
+            io:format("[hb_client] send_signed_message CATCH: ~p:~p~n", [Error, CatchReason]),
+            io:format("[hb_client] send_signed_message Stacktrace: ~p~n", [Stacktrace]),
             {error, {Error, CatchReason}}
     end.
 
@@ -130,53 +152,111 @@ send_signed_message(ServerURL, SignedMessage, Opts) ->
 
 %% @doc Send message to parsed URL components
 send_to_parsed_url(SignedMessage, Host, Port, Path, Opts) ->
-    DefaultPath = <<"/">>,
-    RequestPath = hb_ao:get(<<"path">>, SignedMessage, DefaultPath, Opts),
-    FullPath = <<Path/binary, RequestPath/binary>>,
-    
-    Method = hb_ao:get(<<"method">>, SignedMessage, <<"POST">>, Opts),
-    
-    ConvertResult = hb_message:convert(SignedMessage, <<"httpsig@1.0">>, 
-                                      Opts),
-    case ConvertResult of
-        {ok, HTTPMessage} ->
-            send_http_request(HTTPMessage, Host, Port, FullPath, Method, 
-                             Opts);
-        {error, ConvertError} ->
-            {error, ConvertError}
+    try
+        io:format("[hb_client] send_to_parsed_url: Getting request path...~n"),
+        DefaultPath = <<"/">>,
+        RequestPath = hb_ao:get(<<"path">>, SignedMessage, DefaultPath, Opts),
+        % Fix double-slash issue: if both Path and RequestPath start with "/", avoid doubling
+        FullPath = case {Path, RequestPath} of
+            {<<"/">>, RequestPath} when byte_size(RequestPath) > 0 ->
+                RequestPath;  % Use RequestPath directly if Path is just "/"
+            _ ->
+                <<Path/binary, RequestPath/binary>>
+        end,
+        io:format("[hb_client] send_to_parsed_url: FullPath: ~p~n", [FullPath]),
+        
+        Method = hb_ao:get(<<"method">>, SignedMessage, <<"POST">>, Opts),
+        io:format("[hb_client] send_to_parsed_url: Method: ~p~n", [Method]),
+        
+        io:format("[hb_client] send_to_parsed_url: Converting message to httpsig@1.0...~n"),
+        ConvertResult = hb_message:convert(SignedMessage, <<"httpsig@1.0">>, 
+                                          Opts),
+        io:format("[hb_client] send_to_parsed_url: ConvertResult: ~p~n", [ConvertResult]),
+        case ConvertResult of
+            {ok, HTTPMessage} ->
+                io:format("[hb_client] send_to_parsed_url: Convert succeeded (tuple format), calling send_http_request~n"),
+                send_http_request(HTTPMessage, Host, Port, FullPath, Method, 
+                                 Opts);
+            {error, ConvertError} ->
+                io:format("[hb_client] send_to_parsed_url: Convert failed: ~p~n", [ConvertError]),
+                {error, ConvertError};
+            HTTPMessage when is_map(HTTPMessage) ->
+                io:format("[hb_client] send_to_parsed_url: Convert succeeded (direct map format), calling send_http_request~n"),
+                send_http_request(HTTPMessage, Host, Port, FullPath, Method, 
+                                 Opts);
+            Other ->
+                io:format("[hb_client] send_to_parsed_url: Unexpected convert result: ~p~n", [Other]),
+                {error, {unexpected_convert_result, Other}}
+        end
+    catch
+        Error:Reason:Stacktrace ->
+            io:format("[hb_client] send_to_parsed_url CATCH: ~p:~p~n", [Error, Reason]),
+            io:format("[hb_client] send_to_parsed_url Stacktrace: ~p~n", [Stacktrace]),
+            {error, {Error, Reason}}
     end.
 
 %% @doc Send HTTP request with message data
 send_http_request(HTTPMessage, Host, Port, FullPath, Method, Opts) ->
-    Headers = build_headers(HTTPMessage, Opts),
-    Body = hb_ao:get(<<"body">>, HTTPMessage, <<>>, Opts),
-    
-    RequestArgs = #{
-        peer => {Host, Port},
-        path => FullPath,
-        method => Method,
-        headers => Headers,
-        body => Body
-    },
-    
-    case hb_http_client:req(RequestArgs, Opts) of
-        {ok, StatusCode, RespHeaders, RespBody} ->
-            {ok, #{
-                status => StatusCode,
-                headers => RespHeaders,
-                body => RespBody
-            }};
-        {error, SendError} ->
-            {error, SendError}
+    try
+        io:format("[hb_client] send_http_request: Building headers...~n"),
+        Headers = build_headers(HTTPMessage, Opts),
+        io:format("[hb_client] send_http_request: Headers: ~p~n", [Headers]),
+        
+        Body = hb_ao:get(<<"body">>, HTTPMessage, <<>>, Opts),
+        io:format("[hb_client] send_http_request: Body: ~p~n", [Body]),
+        
+        % Format peer as URI string instead of tuple for hb_http_client
+        PeerURI = iolist_to_binary([<<"http://">>, Host, <<":">>, integer_to_binary(Port)]),
+        RequestArgs = #{
+            peer => PeerURI,
+            path => FullPath,
+            method => Method,
+            headers => Headers,
+            body => Body
+        },
+        io:format("[hb_client] send_http_request: RequestArgs: ~p~n", [RequestArgs]),
+        
+        io:format("[hb_client] send_http_request: Calling hb_http_client:req...~n"),
+        % Use httpc instead of gun to avoid URI parsing issues
+        HttpcOpts = maps:put(http_client, httpc, Opts),
+        HttpResult = hb_http_client:req(RequestArgs, HttpcOpts),
+        io:format("[hb_client] send_http_request: hb_http_client:req result: ~p~n", [HttpResult]),
+        case HttpResult of
+            {ok, StatusCode, RespHeaders, RespBody} ->
+                io:format("[hb_client] send_http_request: Success response~n"),
+                {ok, #{
+                    status => StatusCode,
+                    headers => RespHeaders,
+                    body => RespBody
+                }};
+            {error, SendError} ->
+                io:format("[hb_client] send_http_request: Error response: ~p~n", [SendError]),
+                {error, SendError}
+        end
+    catch
+        Error:Reason:Stacktrace ->
+            io:format("[hb_client] send_http_request CATCH: ~p:~p~n", [Error, Reason]),
+            io:format("[hb_client] send_http_request Stacktrace: ~p~n", [Stacktrace]),
+            {error, {Error, Reason}}
     end.
 
 %% @doc Build and sign a message
 build_and_sign_message(Message, Wallet, Opts) ->
-    case build_message(Message, Opts) of
-        {ok, BuiltMessage} ->
-            sign_message(BuiltMessage, Wallet);
-        {error, Reason} ->
-            {error, Reason}
+    try
+        io:format("[hb_client] Step 1: Calling build_message...~n"),
+        case build_message(Message, Opts) of
+            {ok, BuiltMessage} ->
+                io:format("[hb_client] Step 2: build_message succeeded, calling sign_message...~n"),
+                sign_message(BuiltMessage, Wallet);
+            {error, Reason} ->
+                io:format("[hb_client] Step 3: build_message failed: ~p~n", [Reason]),
+                {error, Reason}
+        end
+    catch
+        Error:CatchReason:Stacktrace ->
+            io:format("[hb_client] build_and_sign_message CATCH: ~p:~p~n", [Error, CatchReason]),
+            io:format("[hb_client] build_and_sign_message Stacktrace: ~p~n", [Stacktrace]),
+            {error, {Error, CatchReason}}
     end.
 
 %% @doc Check if required fields are present in a message
@@ -238,5 +318,18 @@ build_headers(HTTPMessage, Opts) ->
         <<"accept">> => <<"application/json">>
     },
     
+    % Get nested headers from the message
     MessageHeaders = hb_ao:get(<<"headers">>, HTTPMessage, #{}, Opts),
-    hb_maps:merge(BaseHeaders, MessageHeaders, Opts).
+    
+    % Add HTTP signature headers directly from the message
+    SignatureHeaders = #{
+        <<"signature">> => maps:get(<<"signature">>, HTTPMessage, undefined),
+        <<"signature-input">> => maps:get(<<"signature-input">>, HTTPMessage, undefined)
+    },
+    
+    % Filter out undefined values
+    FilteredSigHeaders = maps:filter(fun(_, V) -> V =/= undefined end, SignatureHeaders),
+    
+    % Merge all headers together
+    AllHeaders = hb_maps:merge(BaseHeaders, MessageHeaders, Opts),
+    hb_maps:merge(AllHeaders, FilteredSigHeaders, Opts).

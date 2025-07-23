@@ -5,8 +5,7 @@
     {mod, {loadhb_app, []}},
     {applications, [
         kernel,
-        stdlib,
-        hb
+        stdlib
     ]},
     {env, []},
     {modules, []},
