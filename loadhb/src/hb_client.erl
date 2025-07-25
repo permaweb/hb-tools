@@ -58,7 +58,7 @@ send_message(ServerURL, Message, Wallet, Opts) ->
         end
     catch
         Error:Reason:Stacktrace ->
-            {error, {Error, Reason}}
+            {error, {Error, Reason, Stacktrace}}
     end.
 
 %% @doc Build a message using HyperBEAM message building functions
@@ -79,7 +79,7 @@ build_message(Message, Opts) ->
         end
     catch
         Error:CatchReason:Stacktrace ->
-            {error, {Error, CatchReason}}
+            {error, {Error, CatchReason, Stacktrace}}
     end.
 
 %% @doc Sign a message using HyperBEAM signing functions
@@ -93,7 +93,7 @@ sign_message(Message, Wallet) ->
         {ok, SignedMessage}
     catch
         Error:Reason:Stacktrace ->
-            {error, {Error, Reason}}
+            {error, {Error, Reason, Stacktrace}}
     end.
 
 %% @doc Send a pre-signed message to a HyperBEAM server
@@ -120,7 +120,7 @@ send_signed_message(ServerURL, SignedMessage, Opts) ->
         end
     catch
         Error:CatchReason:Stacktrace ->
-            {error, {Error, CatchReason}}
+            {error, {Error, CatchReason, Stacktrace}}
     end.
 
 
@@ -159,7 +159,7 @@ send_to_parsed_url(SignedMessage, Host, Port, Path, Opts) ->
         end
     catch
         Error:Reason:Stacktrace ->
-            {error, {Error, Reason}}
+            {error, {Error, Reason, Stacktrace}}
     end.
 
 %% @doc Send HTTP request with message data
@@ -194,7 +194,7 @@ send_http_request(HTTPMessage, Host, Port, FullPath, Method, Opts) ->
         end
     catch
         Error:Reason:Stacktrace ->
-            {error, {Error, Reason}}
+            {error, {Error, Reason, Stacktrace}}
     end.
 
 %% @doc Build and sign a message
@@ -208,7 +208,7 @@ build_and_sign_message(Message, Wallet, Opts) ->
         end
     catch
         Error:CatchReason:Stacktrace ->
-            {error, {Error, CatchReason}}
+            {error, {Error, CatchReason, Stacktrace}}
     end.
 
 %% @doc Check if required fields are present in a message

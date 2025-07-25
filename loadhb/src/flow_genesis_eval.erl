@@ -9,11 +9,7 @@
 -module(flow_genesis_eval).
 -export([run/0]).
 
--spec run() -> ok | {error, term()}.
 run() ->
-    
-    % Using imported HyperBEAM modules - no need to initialize full application
-    
     try
         Wallet = ar_wallet:new(),
         
@@ -36,18 +32,26 @@ run() ->
             #{}
         ),
         
-        handle_test_result(Result)
-    catch
-        Error:Reason:Stacktrace ->
-            ErrorMsg = {Error, Reason},
-            {error, ErrorMsg}
-    end.
+        HandledResult = handle_test_result(Result),
 
--spec handle_test_result({ok, map()} | {error, term()}) -> 
-    ok | {error, term()}.
-handle_test_result({ok, #{status := Status, body := Body}}) ->
-    ok;
+        loadhb_report:report({flow_genesis_eval, HandledResult})
+    catch
+        Error:Reason:_Stacktrace ->
+            ErrorMsg = {Error, Reason},
+            loadhb_report:report({flow_genesis_eval, [{error, ErrorMsg}]})
+    end,
+
+    ok.
+
+
+handle_test_result({ok, #{status := 200, body := _Body}}) ->
+    {ok, [
+      <<"Successfully built a genesis wasm request">>,
+      <<"Successfully evaluated a genesis wasm request">>
+    ]};
+handle_test_result({ok, #{status := Status, body := _Body}}) ->
+    {error, [<<"Error: status=", (integer_to_binary(Status))/binary>>]};
 handle_test_result({error, Reason}) ->
-    {error, Reason};
+    {error, [Reason]};
 handle_test_result(Other) ->
-    {error, {unexpected_result, Other}}.
+    {error, [{unexpected_result, Other}]}.

@@ -1,8 +1,8 @@
 %%%-------------------------------------------------------------------
 %%% @doc LoadHB Main Entry Point
 %%% 
-%%% Main entry point for running HyperBEAM tests in different environments.
-%%% Takes an environment name as argument and executes the configured flows.
+%%% Main entry point for running HyperBEAM tests in different groups.
+%%% Takes an group name as argument and executes the configured flows.
 %%% 
 %%% @end
 %%%-------------------------------------------------------------------
@@ -11,15 +11,15 @@
 
 -spec main([string()]) -> ok | {error, term()}.
 main([]) ->
-    {error, no_environment_specified};
-main([EnvNameStr | _]) ->
-    EnvName = list_to_atom(EnvNameStr),
+    {error, no_group_specified};
+main([GroupNameStr | _]) ->
+    GroupName = list_to_atom(GroupNameStr),
     
-    case hb_envs:get_environment(EnvName) of
-        {ok, Environment} ->
-            hb_envs:run_flows(Environment);
+    case loadhb_groups:get_group(GroupName) of
+        {ok, Group} ->
+            loadhb_groups:run_flows(Group);
         {error, not_found} ->
-            {error, environment_not_found};
+            {error, group_not_found};
         {error, Reason} ->
             {error, Reason}
     end.

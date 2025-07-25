@@ -16,6 +16,6 @@ Run
 -----
 
 ```sh
-./run.sh local
+./run.sh local_basic
 ```
 

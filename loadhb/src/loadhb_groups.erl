@@ -6,26 +6,26 @@
 %%% 
 %%% @end
 %%%-------------------------------------------------------------------
--module(hb_envs).
--export([get_environment/1, run_flows/1]).
+-module(loadhb_groups).
+-export([get_group/1, run_flows/1]).
 
 -type env_name() :: atom().
 -type url_type() :: router | compute | greenzone.
 -type url_config() :: #{url => binary(), type => url_type()}.
 -type flow_module() :: atom().
--type environment() :: #{
+-type group() :: #{
     name => binary(),
     urls => [url_config()],
     flows => [flow_module()]
 }.
 
--spec get_environment(env_name()) -> {ok, environment()} | {error, not_found}.
-get_environment(EnvName) ->
-    case file:consult("hb_envs.config") of
-        {ok, [{environments, Environments}]} ->
-            case lists:keyfind(EnvName, 1, Environments) of
-                {_EnvName, Environment} ->
-                    {ok, Environment};
+-spec get_group(env_name()) -> {ok, group()} | {error, not_found}.
+get_group(GroupName) ->
+    case file:consult("loadhb_groups.config") of
+        {ok, [{groups, Groups}]} ->
+            case lists:keyfind(GroupName, 1, Groups) of
+                {_GroupName, Group} ->
+                    {ok, Group};
                 false ->
                     {error, not_found}
             end;
@@ -33,7 +33,7 @@ get_environment(EnvName) ->
             {error, {config_error, Reason}}
     end.
 
--spec run_flows(environment()) -> ok | {error, term()}.
+-spec run_flows(group()) -> ok | {error, term()}.
 run_flows(#{flows := Flows}) ->
     case hb_http_client:start_link(#{}) of
         {ok, _Pid} ->
