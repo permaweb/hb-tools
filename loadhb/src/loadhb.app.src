@@ -5,7 +5,8 @@
     {mod, {loadhb_app, []}},
     {applications, [
         kernel,
-        stdlib
+        stdlib,
+        prometheus
     ]},
     {env, []},
     {modules, []},
