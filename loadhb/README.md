@@ -13,7 +13,7 @@ chmod 755 run.sh
 ```
 
 
-Database snapshot flow
+Run database snapshot flow
 -----
 
 ```sh
@@ -27,7 +27,7 @@ chmod 755 starthb.sh
 ```
 
 
-Run
+Run local basic flow
 -----
 
 ```sh
