@@ -83,7 +83,7 @@ async function runConnect(mode) {
         message: handlerAddMessage
     });
     
-    modeLog(mode, `Result Data: ${handlerAddResult.Output?.data}`);
+    modeLog(mode, `Eval Result Data: ${handlerAddResult.Output?.data}`);
     
     const handlerReadMessage = await ao.message({
         process: processId,
@@ -108,14 +108,14 @@ async function runConnect(mode) {
         signer: SIGNER
     });
 
-    modeLog(mode, `Message: ${infoMessage}`);
+    modeLog(mode, `Info Message: ${infoMessage}`);
 
     const infoResult = await ao.result({
         process: processId,
         message: infoMessage
     });
     
-    modeLog(mode, `Result: ${JSON.stringify(infoResult, null, 2)}`);
+    modeLog(mode, `Info Result: ${JSON.stringify(infoResult, null, 2)}`);
 
     const dryrun = await ao.dryrun({
         process: processId,
@@ -135,6 +135,6 @@ async function runConnect(mode) {
 
 (async function () {
     await runConnect('mainnet');
-    await runConnect('legacy');
+    // await runConnect('legacy');
     process.exit(0);
 })();
