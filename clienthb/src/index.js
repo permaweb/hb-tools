@@ -76,14 +76,14 @@ async function runConnect(mode) {
         signer: SIGNER,
     });
 
-    modeLog(mode, `Message: ${handlerAddMessage}`);
+    modeLog(mode, `Added Handlers | Message: ${handlerAddMessage}`);
 
     const handlerAddResult = await ao.result({
         process: processId,
         message: handlerAddMessage
     });
     
-    modeLog(mode, `Result Data: ${handlerAddResult.Output?.data}`);
+    modeLog(mode, `Added Handlers | Result: ${JSON.stringify(handlerAddResult, null, 2)}`);
     
     const handlerReadMessage = await ao.message({
         process: processId,
@@ -92,15 +92,14 @@ async function runConnect(mode) {
         signer: SIGNER,
     });
 
-    modeLog(mode, `Message: ${handlerReadMessage}`);
+    modeLog(mode, `Read Handlers | Message: ${handlerReadMessage}`);
 
     const handlerReadResult = await ao.result({
         process: processId,
         message: handlerReadMessage
     });
     
-    modeLog(mode, `Result: ${JSON.stringify(handlerReadResult, null, 2)}`);
-    modeLog(mode, `Result Data: ${handlerReadResult.Output?.data ?? 'None'}`);
+    modeLog(mode, `Read Handlers | Result: ${JSON.stringify(handlerReadResult, null, 2)}`);
 
     const infoMessage = await ao.message({
         process: processId,
@@ -108,21 +107,24 @@ async function runConnect(mode) {
         signer: SIGNER
     });
 
-    modeLog(mode, `Message: ${infoMessage}`);
+    modeLog(mode, `Action: Info | Message: ${infoMessage}`);
 
     const infoResult = await ao.result({
         process: processId,
         message: infoMessage
     });
     
-    modeLog(mode, `Result: ${JSON.stringify(infoResult, null, 2)}`);
+    modeLog(mode, `Action: Info | Result: ${JSON.stringify(infoResult, null, 2)}`);
 
     const dryrun = await ao.dryrun({
         process: processId,
-        tags: [{ name: 'Action', value: 'Info' }]
+        tags: [
+            { name: 'Action', value: 'Info' },
+            {name:'test', value:'dryrun'}
+        ]
     });
 
-    modeLog(mode, `Dryrun: ${JSON.stringify(dryrun, null, 2)}`);
+    modeLog(mode, `Dryrun | Result: ${JSON.stringify(dryrun, null, 2)}`);
 
     await new Promise((r) => setTimeout(r, 1000))
 
