@@ -1,7 +1,11 @@
 import { createSigner } from '@permaweb/ao-core-libs';
 import { connect } from '@permaweb/aoconnect';
 
+// const MAINNET_URL = 'https://forward.computer';
 const MAINNET_URL = 'http://localhost:8734';
+
+// const MAINNET_SCHEDULER = 'NoZH3pueH0Cih6zjSNu_KRAcmg4ZJV1aGHKi0Pi5_Hc';
+const MAINNET_SCHEDULER = 'mYJTM8VpIibDLuyGLQTcbcPy-LeOY48qzECADTUYfWc';
 
 const WALLET = {
     kty: 'RSA',
@@ -19,18 +23,31 @@ const SIGNER = createSigner(WALLET);
 
 function modeLog(mode, ...args) {
     const ansi = mode === 'mainnet' ? '36' : '90';
-	console.log(`\x1b[${ansi}m[${mode.toUpperCase()}]\x1b[0m`, ...args);
+    console.log(`\x1b[${ansi}m[${mode.toUpperCase()}]\x1b[0m`, ...args);
 }
 
 async function runConnect(mode) {
     const useMainnet = mode === 'mainnet';
 
     let connectDeps = { MODE: useMainnet ? 'mainnet' : 'legacy', signer: SIGNER };
-    if (useMainnet) connectDeps.URL = MAINNET_URL;
+    if (useMainnet) {
+        connectDeps.URL = MAINNET_URL;
+        connectDeps.SCHEDULER = MAINNET_SCHEDULER;
+    };
 
     const ao = connect(connectDeps);
 
+    // /* ------------------------------------------------------------------- */
+    // const r = await ao.result({
+    //     process: 'VgfmfEW0wrRjjJunPmO5RaO7XyfWFQj5efPyetf2dbE',
+    //     message: '3'
+    // });
+
+    // console.log(JSON.stringify(r, null, 2));
+    // /* ------------------------------------------------------------------- */
+    
     let spawnArgs = { tags: [{ name: 'Name', value: Date.now().toString() }] };
+
     if (!useMainnet) {
         spawnArgs.module = 'URgYpPQzvxxfYQtjrIQ116bl3YBfcImo3JEnNo8Hlrk';
         spawnArgs.scheduler = '_GQ33BkPtZrqxA84vM8Zk-N2aO0toNNu_C-l-rawrBA';
@@ -56,6 +73,7 @@ async function runConnect(mode) {
     });
 
     modeLog(mode, `Result: ${JSON.stringify(versionResult, null, 2)}`);
+
     modeLog(mode, `Result Data: ${versionResult.Output?.data}`);
 
     const handlerAddMessage = await ao.message({
@@ -82,9 +100,9 @@ async function runConnect(mode) {
         process: processId,
         message: handlerAddMessage
     });
-    
+
     modeLog(mode, `Added Handlers | Result: ${JSON.stringify(handlerAddResult, null, 2)}`);
-    
+
     const handlerReadMessage = await ao.message({
         process: processId,
         tags: [{ name: 'Action', value: 'Eval' }],
@@ -98,7 +116,7 @@ async function runConnect(mode) {
         process: processId,
         message: handlerReadMessage
     });
-    
+
     modeLog(mode, `Read Handlers | Result: ${JSON.stringify(handlerReadResult, null, 2)}`);
 
     const infoMessage = await ao.message({
@@ -113,8 +131,16 @@ async function runConnect(mode) {
         process: processId,
         message: infoMessage
     });
-    
+
     modeLog(mode, `Action: Info | Result: ${JSON.stringify(infoResult, null, 2)}`);
+
+    const results = await ao.results({
+        process: processId
+    });
+
+    modeLog(mode, `Results: ${JSON.stringify(results, null, 2)}`);
+
+    await new Promise((r) => setTimeout(r, 1000))
 
     const dryrun = await ao.dryrun({
         process: processId,
@@ -125,18 +151,10 @@ async function runConnect(mode) {
     });
 
     modeLog(mode, `Dryrun | Result: ${JSON.stringify(dryrun, null, 2)}`);
-
-    await new Promise((r) => setTimeout(r, 1000))
-
-    const results = await ao.results({
-        process: processId
-    });
-
-    modeLog(mode, `Results: ${JSON.stringify(results, null, 2)}`);
 }
 
 (async function () {
     await runConnect('mainnet');
-    await runConnect('legacy');
+    // await runConnect('legacy');
     process.exit(0);
 })();
