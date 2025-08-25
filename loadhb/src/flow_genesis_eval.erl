@@ -7,9 +7,12 @@
 %%% @end
 %%%-------------------------------------------------------------------
 -module(flow_genesis_eval).
--export([run/0]).
+-export([run/0, run/1]).
 
 run() ->
+    run(prod_basic).
+
+run(GroupName) ->
     try
         Wallet = ar_wallet:new(),
         
@@ -25,8 +28,10 @@ run() ->
             <<"signingFormat">> => <<"ANS-104">>
         },
         
+        {ok, Url} = loadhb_groups:get_url(GroupName, compute),
+        
         Result = hb_client:send_message(
-            <<"http://localhost:8734">>, 
+            Url, 
             Message, 
             Wallet, 
             #{}

@@ -386,9 +386,12 @@
 %   "GdB3ZOrcmHjzIrcIk59c-K_ZaTxFXmQ2vAORyAuX3s4": "Botega LP AO/TKTXX"
 % }
 
--export([run/0]).
+-export([run/0, run/1]).
 
 run() ->
+    run(prod_basic).
+
+run(GroupName) ->
     try
         Wallet = ar_wallet:new(),
         
@@ -419,7 +422,7 @@ run() ->
         },
         
         % Process each pool
-        Results = process_pools(ProcessIds, Wallet),
+        Results = process_pools(ProcessIds, Wallet, GroupName),
         
         % Check if any results contain errors
         HasErrors = lists:any(fun(Result) ->
@@ -446,14 +449,14 @@ run() ->
     
     ok.
 
-process_pools(ProcessIds, Wallet) ->
+process_pools(ProcessIds, Wallet, GroupName) ->
     ParentPid = self(),
     
     % Spawn a process for each pool
     Pids = maps:fold(fun(ProcessId, Description, Acc) ->
         Pid = spawn(fun() ->
             Result = process_single_pool(ProcessId, Description, 
-                                       Wallet),
+                                       Wallet, GroupName),
             ParentPid ! {pool_result, Result}
         end),
         [Pid | Acc]
@@ -472,7 +475,7 @@ collect_results(Count, Results) ->
         [{error, <<"Timeout waiting for pool results">>} | Results]
     end.
 
-process_single_pool(ProcessId, Description, Wallet) ->
+process_single_pool(ProcessId, Description, Wallet, GroupName) ->
     % Step 1: Hydrate using cron
     CronPath = <<"/", ProcessId/binary, "~process@1.0/now">>,
     Path = <<"/~cron@1.0/once?cron-path=", CronPath/binary>>,
@@ -486,8 +489,10 @@ process_single_pool(ProcessId, Description, Wallet) ->
         <<"signingFormat">> => <<"ANS-104">>
     },
     
+    {ok, Url} = loadhb_groups:get_url(GroupName, compute),
+    
     Result = hb_client:send_message(
-        <<"http://localhost:8734">>, 
+        Url, 
         Message, 
         Wallet, 
         #{}
@@ -499,7 +504,7 @@ process_single_pool(ProcessId, Description, Wallet) ->
         {ok, CronMessages} ->
             % Step 2: Monitor hydration status
             MonitorResult = start_monitoring(ProcessId, Wallet, 
-                                           CronMessages),
+                                           CronMessages, GroupName),
             {ProcessId, Description, MonitorResult};
         {error, CronMessages} ->
             {ProcessId, Description, {error, CronMessages}}
@@ -521,7 +526,7 @@ handle_cron_result({error, Reason}) ->
 handle_cron_result(Other) ->
     {error, [{unexpected_result, Other}]}.
 
-start_monitoring(ProcessId, Wallet, CronReqMessages) ->
+start_monitoring(ProcessId, Wallet, CronReqMessages, GroupName) ->
     Path = <<"/", ProcessId/binary, 
              "~process@1.0/compute/at-slot">>,
           
@@ -535,17 +540,19 @@ start_monitoring(ProcessId, Wallet, CronReqMessages) ->
     },
     
     monitoring_loop(Message, Wallet, CronReqMessages, 1, 
-                   undefined, []).
+                   undefined, [], GroupName).
 
 monitoring_loop(_Message, _Wallet, CronReqMessages, 4, 
-               _PrevBody, IterationMessages) ->
+               _PrevBody, IterationMessages, _GroupName) ->
     AllMessages = CronReqMessages ++ IterationMessages,
     {ok, AllMessages};
 
 monitoring_loop(Message, Wallet, CronReqMessages, Iteration, 
-               PrevBody, IterationMessages) ->
+               PrevBody, IterationMessages, GroupName) ->
+    {ok, Url} = loadhb_groups:get_url(GroupName, compute),
+    
     Result = hb_client:send_message(
-        <<"http://localhost:8734">>, 
+        Url, 
         Message, 
         Wallet, 
         #{}
@@ -562,7 +569,8 @@ monitoring_loop(Message, Wallet, CronReqMessages, Iteration,
                       CronReqMessages, 
                       Iteration + 1, 
                       Body, 
-                      IterationMessages ++ NewIterationMessages
+                      IterationMessages ++ NewIterationMessages,
+                      GroupName
                     );
                 {stop_success, NewIterationMessages} ->
                     AllMessages = CronReqMessages ++ 

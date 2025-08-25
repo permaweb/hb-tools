@@ -24,6 +24,7 @@ async function runConnect(mode) {
         connectDeps.SCHEDULER = MAINNET_SCHEDULER;
     };
 
+    console.log('connectDeps', connectDeps);
     const ao = connect(connectDeps);
 
     // /* ------------------------------------------------------------------- */
@@ -43,6 +44,7 @@ async function runConnect(mode) {
         spawnArgs.signer = SIGNER;
     }
 
+    console.log('spawnArgs', spawnArgs);
     const processId = await ao.spawn(spawnArgs);
 
     modeLog(mode, `Process ID: ${processId}`);
