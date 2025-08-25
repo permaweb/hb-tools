@@ -13,20 +13,6 @@ chmod 755 run.sh
 ```
 
 
-Run database snapshot flow
------
-
-```sh
-# In one shell
-export HYPERBEAM_PATH=/path/to/your/HyperBEAM
-chmod 755 starthb.sh
-./starthb.sh
-
-# In another shell
-./run.sh local_from_db
-```
-
-
 Run local basic flow
 -----
 

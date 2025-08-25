@@ -11,7 +11,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@permaweb/ao-core-libs": "file:../../ao-core-libs",
+    "@permaweb/ao-core-libs": "^0.0.3",
     "@permaweb/aoconnect": "file:../../ao/connect"
   }
 }
