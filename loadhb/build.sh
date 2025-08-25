@@ -35,6 +35,7 @@ for module in $HB_MODULES; do
         cp "$HYPERBEAM_PATH/src/${module}.erl" "src/hb_imported/"
         # Fix include paths in the copied module
         sed -i 's|-include("include/|-include("hb_imported/|g' "src/hb_imported/${module}.erl"
+        sed -i 's|-include_lib("include/|-include("hb_imported/|g' "src/hb_imported/${module}.erl"
         
         # Fix hb_keccak NIF loading issues
         if [ "$module" = "hb_keccak" ]; then

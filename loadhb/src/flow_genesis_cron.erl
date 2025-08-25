@@ -7,9 +7,12 @@
 %%% @end
 %%%-------------------------------------------------------------------
 -module(flow_genesis_cron).
--export([run/0]).
+-export([run/0, run/1]).
 
 run() ->
+    run(prod_basic).
+
+run(GroupName) ->
     try
         Wallet = ar_wallet:new(),
         
@@ -26,8 +29,10 @@ run() ->
             <<"signingFormat">> => <<"ANS-104">>
         },
         
+        {ok, Url} = loadhb_groups:get_url(GroupName, compute),
+        
         Result = hb_client:send_message(
-            <<"http://localhost:8734">>, 
+            Url, 
             Message, 
             Wallet, 
             #{}
@@ -37,7 +42,7 @@ run() ->
 
         case HandledCronResult of 
           {ok, Messages} ->
-            start_monitoring(ProcessId, Wallet, Messages);
+            start_monitoring(ProcessId, Wallet, Messages, GroupName);
           {error, _Messages} ->
             loadhb_report:report({flow_genesis_eval, HandledCronResult})
         end
@@ -66,7 +71,7 @@ handle_cron_result(Other) ->
     {error, [{unexpected_result, Other}]}.
 
 
-start_monitoring(ProcessId, Wallet, CronReqMessages) ->
+start_monitoring(ProcessId, Wallet, CronReqMessages, GroupName) ->
     Path = <<"/", ProcessId/binary, "~process@1.0/compute/at-slot">>,
           
     Message = #{
@@ -78,15 +83,17 @@ start_monitoring(ProcessId, Wallet, CronReqMessages) ->
         <<"signingFormat">> => <<"ANS-104">>
     },
     
-    monitoring_loop(Message, Wallet, CronReqMessages, 1, undefined, []).
+    monitoring_loop(Message, Wallet, CronReqMessages, 1, undefined, [], GroupName).
 
-monitoring_loop(_Message, _Wallet, CronReqMessages, 4, _PrevBody, IterationMessages) ->
+monitoring_loop(_Message, _Wallet, CronReqMessages, 4, _PrevBody, IterationMessages, _GroupName) ->
     AllMessages = CronReqMessages ++ IterationMessages,
     loadhb_report:report({flow_genesis_eval, {ok, AllMessages}});
 
-monitoring_loop(Message, Wallet, CronReqMessages, Iteration, PrevBody, IterationMessages) ->
+monitoring_loop(Message, Wallet, CronReqMessages, Iteration, PrevBody, IterationMessages, GroupName) ->
+    {ok, MonitorUrl} = loadhb_groups:get_url(GroupName, compute),
+    
     Result = hb_client:send_message(
-        <<"http://localhost:8734">>, 
+        MonitorUrl, 
         Message, 
         Wallet, 
         #{}
@@ -103,7 +110,8 @@ monitoring_loop(Message, Wallet, CronReqMessages, Iteration, PrevBody, Iteration
                       CronReqMessages, 
                       Iteration + 1, 
                       Body, 
-                      IterationMessages ++ NewIterationMessages
+                      IterationMessages ++ NewIterationMessages,
+                      GroupName
                     );
                 {stop_success, NewIterationMessages} ->
                     AllMessages = CronReqMessages ++ IterationMessages ++ NewIterationMessages,
