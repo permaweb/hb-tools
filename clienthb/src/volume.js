@@ -4,6 +4,8 @@ import { connect } from '@permaweb/aoconnect';
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 import { performance } from 'perf_hooks';
 
+import { parseArgs } from './utils.js';
+
 // Default values - can be overridden by CLI flags
 let TOTAL_SPAWNS = 100;                  // Total processes to spawn across all workers
 let TOTAL_MESSAGES = 1000;               // Total Info messages to send across all workers
@@ -211,38 +213,11 @@ async function workerRun({
     };
 }
 
-function parseArgs() {
-    const args = process.argv.slice(2);
-    const flags = {};
-    let group = null;
 
-    for (let i = 0; i < args.length; i++) {
-        const arg = args[i];
-        if (arg.startsWith('--')) {
-            const [key, value] = arg.slice(2).split('=');
-            if (value !== undefined) {
-                flags[key] = value;
-            } else if (i + 1 < args.length && !args[i + 1].startsWith('--')) {
-                flags[key] = args[++i];
-            } else {
-                flags[key] = true;
-            }
-        } else if (!group) {
-            group = arg;
-        }
-    }
-
-    if (!group) {
-        console.error('Usage: node volume.js <group> [--url <url>] [--scheduler <address>] [--config <path>] [--spawns <count>] [--messages <count>] [--workers <count>]');
-        process.exit(1);
-    }
-
-    return { group, flags };
-}
 
 if (isMainThread) {
     (async () => {
-        const { group, flags } = parseArgs();
+        const { group, flags } = parseArgs('volume.js');
 
         // Apply CLI overrides
         if (flags.spawns) TOTAL_SPAWNS = parseInt(flags.spawns);
