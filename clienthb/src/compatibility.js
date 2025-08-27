@@ -2,11 +2,41 @@ import fs from 'fs';
 import { createSigner } from '@permaweb/ao-core-libs';
 import { connect } from '@permaweb/aoconnect';
 
-const config = JSON.parse(fs.readFileSync('config.json'));
-const group = process.argv[2];
+function parseArgs() {
+    const args = process.argv.slice(2);
+    const flags = {};
+    let group = null;
+    
+    for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        if (arg.startsWith('--')) {
+            const [key, value] = arg.slice(2).split('=');
+            if (value !== undefined) {
+                flags[key] = value;
+            } else if (i + 1 < args.length && !args[i + 1].startsWith('--')) {
+                flags[key] = args[++i];
+            } else {
+                flags[key] = true;
+            }
+        } else if (!group) {
+            group = arg;
+        }
+    }
+    
+    if (!group) {
+        console.error('Usage: node compatibility.js <group> [--url <url>] [--scheduler <address>] [--config <path>]');
+        process.exit(1);
+    }
+    
+    return { group, flags };
+}
 
-const MAINNET_URL = config[group].url;
-const MAINNET_SCHEDULER = config[group].schedulerAddress;
+const { group, flags } = parseArgs();
+const configPath = flags.config || 'config.json';
+const config = JSON.parse(fs.readFileSync(configPath));
+
+const MAINNET_URL = flags.url || config[group].url;
+const MAINNET_SCHEDULER = flags.scheduler || config[group].schedulerAddress;
 const WALLET = config[group].wallet;
 const SIGNER = createSigner(WALLET);
 
