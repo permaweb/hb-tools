@@ -106,6 +106,45 @@ async function runAOFlow() {
   await retryInitPush(processId, 10, n);
 
   log(`Spawned process ${processId}...`);
+
+  const msgArgs = {
+    tags: [
+      { name: 'Action', value: 'Info'}
+    ],
+    data: 'hello'
+  }
+
+  const messageParams = {
+    path: `/${processId}~process@1.0/push/serialize~json@1.0`,
+    target: processId,
+    data: getData(msgArgs),
+    ...getTags(msgArgs),
+    ...getAOParams('Message'),
+    ...baseParams
+  }
+
+  const messageResponse = await aoCore.request(messageParams)
+
+  const parsedResponse = await messageResponse.json()
+
+  if(messageResponse.ok) {
+    const resultParams = {
+      path: `/${processId}~process@1.0/compute/serialize~json@1.0`,
+      target: processId,
+      slot: parsedResponse.slot,
+      data: getData(args),
+      ...getTags(args),
+      ...baseParams,
+      method: 'POST',
+      'signing-format': 'ans104'
+    }
+
+    const resultResponse = await aoCore.request(resultParams)
+
+    if(resultResponse.status == 200) {
+      log(`Read result, AO flow was successful!`);
+    }
+  }
 }
 
 async function run() {
