@@ -12,6 +12,13 @@
       "dp": "1f1ej-ks2P2sANvuLkzvl1PIOvGNIXHTH7QmufEaX6sexiIE2oZRNhK_Se0qi9D0AXB7cPmeO-SjFAGBPhWiDIoZZq4HAdc2M1uu1eymxzsFB69zD3L315tSfnAUERlqxcSD5QEVMn-Cf6lsugWRMkkB4XaEgxMR7DTF2165Fm5QjZlSk60J3hyPbCq-1g0eIfK06-8uVigDyUmfoSoXm4hN5IciqUM2YRZe6UZqaakRrMKJoWym-op3gdJRBCkBG9R2oZlCW5imizThbFp5cYHNFElgFCX6ACSk_w6soz1eTH6r4W-QDJYPGxCdEOrOB9DuzXGomOUhSbFRd59wxQ",
       "dq": "GmasSM7MDeDcHGQIfYbf3Nw4WCC4XygX60rJkKFBEmr47RwwGJQFWu9mIr2rqVwxHLlK60SSqnERKQeL4JalIjOZoQ_t0FqlUosxiaWzBF3BmBh3Z_97q0eO1VjbRgG4DtggF4X058furI5_K5N9f3T-E-muD2HuaHzWIkn2OauQh3WkVIDzVbf_uJ0aLgNe8ucuMsoQpQh9U4FCqCHIMRM6f9pOfMzuM3JaUUmXS1nK4Fpsb_UkIDHNkBGQHOsgL3BgdgqhlebVRvb24zP2SRA6T1Sd0CFYJTo_75M4AsYnYqTgzrcZhYUtbf54J5uJcgnMmxrHuy7XDSXm8FjVsQ",
       "qi": "HJhf2ZP_PczoOoEMAw3cN6wdrZLG9J465tDjZ4HYqL9vrzPs7fPrXWJo4-WA-p_2IDXCkMP_t6H6JFyK1xHmDmjNpP7XlTwBb_hcEgn0W3dvmZ597Ey-B38IZfn0J4Wq3s34kcq3tprB5rG08qTm4d_tG-sln8Z7Ey-bLKTWPL_kIqpTCJ0H7cGvFVRMGN2dc9nPb4MYFRXhxZS7JF4SQJyRwPuHEMsY97Ph2IpNYpxKTGR1LfqWwSwnwrfyY_Y8sgkHMSNDvZcdGmaEYxhzTXa9xFGUdEFn2IAUIdvVz0aCBqC0soyfrkF955SDbCkbD2QxhyLX1DBVBcw_HEUCRA"
-    }
+    },
+    "scripts": [
+      "compatibility.js",
+      "core-libs.js",
+      "message-passing.js",
+      "patch.js",
+      "volume.js"
+    ]
   }
 }
