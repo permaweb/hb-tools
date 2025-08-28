@@ -34,8 +34,8 @@ async function run() {
   log(`Running message passing tests...`);
   if (!config[group]) throw new Error(`Group "${group}" not found in ${configPath}`);
 
-  const MAINNET_URL = config[group].url;
-  const MAINNET_SCHEDULER = config[group].schedulerAddress;
+  const MAINNET_URL = flags.url || config[group].url;
+  const MAINNET_SCHEDULER = flags.scheduler || config[group].schedulerAddress;
   const WALLET = config[group].wallet;
 
   const SIGNER = createSigner(WALLET);

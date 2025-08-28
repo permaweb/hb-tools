@@ -4,12 +4,16 @@ import AOCore, { createSigner } from '@permaweb/ao-core-libs';
 
 import { parseArgs } from './utils.js';
 
-const { group, flags } = parseArgs('message-passing.js');
+const { group, flags } = parseArgs('core-libs.js');
 const configPath = flags.config || 'config.json';
 const config = JSON.parse(fs.readFileSync(configPath));
 
-const MAINNET_URL = config[group].url;
-const MAINNET_SCHEDULER = config[group].schedulerAddress;
+if (!config[group]) {
+  throw new Error(`Group "${group}" not found in ${configPath}`);
+}
+
+const MAINNET_URL = flags.url || config[group].url;
+const MAINNET_SCHEDULER = flags.scheduler || config[group].schedulerAddress;
 const jwk = config[group].wallet;
 
 let scheduler = MAINNET_SCHEDULER
