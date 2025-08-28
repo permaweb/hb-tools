@@ -4,6 +4,7 @@ AO client tools for integration and load testing.
 
 ## Scripts
 
+---
 
 ## Group Runner
 
@@ -68,7 +69,7 @@ Each group must include:
 - `wallet` - RSA private key in JWK format for signing transactions
 - `scripts` - Array of script filenames to run with `run-group.js` (optional)
 
-
+---
 
 ### compatibility.js
 
@@ -102,7 +103,7 @@ node src/compatibility.js local_basic --config ./production-config.json
 node src/compatibility.js local_basic --url https://mainnet.ao.dev --scheduler XYZ789...abc --config ./staging-config.json
 ```
 
-
+---
 
 ### volume.js
 
@@ -149,7 +150,7 @@ The volume test includes additional hardcoded configuration that can be modified
 
 These settings control the load characteristics and can be adjusted for different testing scenarios.
 
-
+---
 
 ### core-libs.js
 
@@ -183,7 +184,7 @@ node src/core-libs.js local_basic --config ./custom-config.json
 - Sends an "Info" action message to the process
 - Reads the computation result to verify the flow worked
 
-
+---
 
 ### message-passing.js
 
@@ -218,7 +219,7 @@ node src/message-passing.js local_basic --config ./staging-config.json
 - Process 1 sends a message to process 2, which forwards it to process 3
 - Verifies that process 3 received the expected "pong" message
 
-
+---
 
 ### patch.js
 
