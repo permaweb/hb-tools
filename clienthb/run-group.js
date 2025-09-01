@@ -98,37 +98,53 @@ function runScript(scriptName) {
   });
 }
 
-// Run all scripts in parallel
-const promises = scripts.map(runScript);
+// Run all scripts sequentially
+async function runScriptsSequentially() {
+  const results = [];
+  
+  for (const scriptName of scripts) {
+    try {
+      console.log(`\nRunning ${scriptName}...`);
+      const result = await runScript(scriptName);
+      results.push({ status: 'fulfilled', value: result });
+      console.log(`✅ ${scriptName} completed successfully`);
+    } catch (error) {
+      results.push({ status: 'rejected', reason: error });
+      console.log(`❌ ${scriptName} failed: ${error.error ? error.error.message : `exit code ${error.code}`}`);
+      
+      // Stop execution on first failure
+      console.log('\n--- Execution stopped due to failure ---');
+      break;
+    }
+  }
+  
+  console.log('\n--- Summary ---');
+  
+  const successful = results.filter(r => r.status === 'fulfilled');
+  const failed = results.filter(r => r.status === 'rejected');
+  
+  console.log(`Successful: ${successful.length}/${scripts.length}`);
+  
+  if (successful.length > 0) {
+    console.log('✅ Completed scripts:');
+    successful.forEach(result => {
+      console.log(`  - ${result.value.script}`);
+    });
+  }
+  
+  if (failed.length > 0) {
+    console.log('❌ Failed scripts:');
+    failed.forEach(result => {
+      const reason = result.reason;
+      console.log(`  - ${reason.script}: ${reason.error ? reason.error.message : `exit code ${reason.code}`}`);
+    });
+  }
+  
+  // Exit with error code if any script failed
+  process.exit(failed.length > 0 ? 1 : 0);
+}
 
-Promise.allSettled(promises)
-  .then(results => {
-    console.log('\n--- Summary ---');
-    
-    const successful = results.filter(r => r.status === 'fulfilled');
-    const failed = results.filter(r => r.status === 'rejected');
-    
-    console.log(`Successful: ${successful.length}/${results.length}`);
-    
-    if (successful.length > 0) {
-      console.log('✅ Completed scripts:');
-      successful.forEach(result => {
-        console.log(`  - ${result.value.script}`);
-      });
-    }
-    
-    if (failed.length > 0) {
-      console.log('❌ Failed scripts:');
-      failed.forEach(result => {
-        const reason = result.reason;
-        console.log(`  - ${reason.script}: ${reason.error ? reason.error.message : `exit code ${reason.code}`}`);
-      });
-    }
-    
-    // Exit with error code if any script failed
-    process.exit(failed.length > 0 ? 1 : 0);
-  })
-  .catch(err => {
-    console.error('Unexpected error:', err);
-    process.exit(1);
-  });
+runScriptsSequentially().catch(err => {
+  console.error('Unexpected error:', err);
+  process.exit(1);
+});
