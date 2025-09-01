@@ -63,7 +63,7 @@ end)
       process: pid2,
       tags: [{ name: 'Action', value: 'Eval' }],
       data: code,
-      SIGNER,
+      signer: SIGNER,
   });
 
   const codePong = `
@@ -76,7 +76,7 @@ end)
       process: pid3,
       tags: [{ name: 'Action', value: 'Eval' }],
       data: codePong,
-      SIGNER,
+      signer: SIGNER,
   });
 
   
@@ -86,10 +86,10 @@ end)
       data: `
 ao.send({ Target = '${pid2}', Data = 'ping', Action = 'Info' })
       `.trim(),
-      SIGNER,
+      signer: SIGNER,
   });
 
-  await new Promise((r) => setTimeout(r, 5000))
+  await new Promise((r) => setTimeout(r, 15000))
 
   const resultsPid3 = await ao.results({
       process: pid3

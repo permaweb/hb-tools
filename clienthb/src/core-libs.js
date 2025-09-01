@@ -28,6 +28,16 @@ const baseParams = {
   'accept-codec': 'httpsig@1.0'
 }
 
+const messageBaseParams = {
+  type: 'Message',
+  method: 'POST',
+  'signing-format': 'ans104',
+  'data-protocol': 'ao',
+  'accept': 'application/json',
+  'accept-bundle': 'true'
+}
+
+
 const getAOParams = (type) => ({
   Type: type,
   'Data-Protocol': 'ao',
@@ -124,7 +134,7 @@ async function runAOFlow() {
     data: getData(msgArgs),
     ...getTags(msgArgs),
     ...getAOParams('Message'),
-    ...baseParams
+    ...messageBaseParams
   }
 
   const messageResponse = await aoCore.request(messageParams)
@@ -146,7 +156,11 @@ async function runAOFlow() {
     const resultResponse = await aoCore.request(resultParams)
 
     if(resultResponse.status == 200) {
+      const resultData = await resultResponse.json();
+      console.log("Result Data:", JSON.stringify(resultData, null, 2));
       log(`Read result, AO flow was successful!`);
+    } else {
+      throw new Error(`Failed to read result, status: ${resultResponse.status}`);
     }
   }
 }
