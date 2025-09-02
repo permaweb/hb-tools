@@ -7,12 +7,14 @@ const { group, flags } = parseArgs('message-passing.js');
 const configPath = flags.config || 'config.json';
 const config = JSON.parse(fs.readFileSync(configPath));
 
+let groupConfig;
+
 function log(...args) {
   console.log(`\x1b[36m[Message Passing]\x1b[0m`, ...args);
 }
 
 async function spawnNew(ao, SIGNER) {
-  let spawnArgs = { module: config[group].aosModule, tags: [{ name: 'Name', value: Date.now().toString() }] };
+  let spawnArgs = { module: groupConfig.aosModule, tags: [{ name: 'Name', value: Date.now().toString() }] };
 
   const processId = await ao.spawn(spawnArgs);
 
@@ -31,8 +33,10 @@ async function run() {
   log(`Running message passing tests...`);
   if (!config[group]) throw new Error(`Group '${group}' not found in ${configPath}`);
 
-  const MAINNET_URL = flags.url || config[group].url;
-  const MAINNET_SCHEDULER = flags.scheduler || config[group].schedulerAddress;
+  groupConfig = { ...config.defaults, ...config[group] };
+
+  const MAINNET_URL = flags.url || groupConfig.url;
+  const MAINNET_SCHEDULER = flags.scheduler || groupConfig.schedulerAddress;
   const WALLET = JSON.parse(fs.readFileSync(process.env.PATH_TO_WALLET));
 
   const SIGNER = createSigner(WALLET);
