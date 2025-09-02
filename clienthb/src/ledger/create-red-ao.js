@@ -2,7 +2,7 @@ import fs from 'fs'
 
 import Arweave from 'arweave';
 import { connect, createSigner } from '@permaweb/aoconnect';
-import { parseArgs } from './utils.js';
+import { parseArgs } from '../utils.js';
 
 const { group, flags } = parseArgs('message-passing.js');
 const configPath = flags.config || 'config.json';
