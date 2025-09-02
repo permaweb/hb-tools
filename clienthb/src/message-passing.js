@@ -1,10 +1,8 @@
-
-
 import fs from 'fs';
 import { createSigner } from '@permaweb/ao-core-libs';
 import { connect } from '@permaweb/aoconnect';
 
-import { parseArgs } from './utils.js';
+import { parseArgs, expect, createTestRunner } from './utils.js';
 
 const { group, flags } = parseArgs('message-passing.js');
 const configPath = flags.config || 'config.json';
@@ -31,12 +29,13 @@ async function spawnNew(ao, SIGNER) {
 
 
 async function run() {
+  const runner = createTestRunner();
   log(`Running message passing tests...`);
   if (!config[group]) throw new Error(`Group "${group}" not found in ${configPath}`);
 
   const MAINNET_URL = flags.url || config[group].url;
   const MAINNET_SCHEDULER = flags.scheduler || config[group].schedulerAddress;
-  const WALLET = config[group].wallet;
+  const WALLET = JSON.parse(fs.readFileSync(process.env.PATH_TO_WALLET));
 
   const SIGNER = createSigner(WALLET);
   const ao = connect({
@@ -46,9 +45,22 @@ async function run() {
       signer: SIGNER,
   });
 
-  let pid1 = await spawnNew(ao, SIGNER);
-  let pid2 = await spawnNew(ao, SIGNER);
-  let pid3 = await spawnNew(ao, SIGNER);
+  let pid1, pid2, pid3;
+  
+  await runner.test(async () => {
+    pid1 = await spawnNew(ao, SIGNER);
+    expect(pid1).toEqualType('string');
+  });
+  
+  await runner.test(async () => {
+    pid2 = await spawnNew(ao, SIGNER);
+    expect(pid2).toEqualType('string');
+  });
+  
+  await runner.test(async () => {
+    pid3 = await spawnNew(ao, SIGNER);
+    expect(pid3).toEqualType('string');
+  });
 
   log(`Processes: `, pid1, pid2, pid3);
 
@@ -59,11 +71,14 @@ Handlers.add('Info', 'Info', function(msg)
 end)
   `.trim();
 
-  ao.message({
-      process: pid2,
-      tags: [{ name: 'Action', value: 'Eval' }],
-      data: code,
-      signer: SIGNER,
+  await runner.test(async () => {
+    const message = await ao.message({
+        process: pid2,
+        tags: [{ name: 'Action', value: 'Eval' }],
+        data: code,
+        signer: SIGNER,
+    });
+    expect(message).toEqualType('number');
   });
 
   const codePong = `
@@ -72,40 +87,47 @@ Handlers.add('Pong', 'Pong', function(msg)
 end)
   `.trim();
 
-  ao.message({
-      process: pid3,
-      tags: [{ name: 'Action', value: 'Eval' }],
-      data: codePong,
-      signer: SIGNER,
+  await runner.test(async () => {
+    const message = await ao.message({
+        process: pid3,
+        tags: [{ name: 'Action', value: 'Eval' }],
+        data: codePong,
+        signer: SIGNER,
+    });
+    expect(message).toEqualType('number');
   });
 
   
-  ao.message({
-      process: pid1,
-      tags: [{ name: 'Action', value: 'Eval' }],
-      data: `
+  await runner.test(async () => {
+    const message = await ao.message({
+        process: pid1,
+        tags: [{ name: 'Action', value: 'Eval' }],
+        data: `
 ao.send({ Target = '${pid2}', Data = 'ping', Action = 'Info' })
-      `.trim(),
-      signer: SIGNER,
+        `.trim(),
+        signer: SIGNER,
+    });
+    expect(message).toEqualType('number');
   });
 
-  await new Promise((r) => setTimeout(r, 15000))
+  await new Promise((r) => setTimeout(r, 15000));
 
-  const resultsPid3 = await ao.results({
-      process: pid3
+  await runner.test(async () => {
+    const resultsPid3 = await ao.results({
+        process: pid3
+    });
+    
+    let data = resultsPid3["edges"][0]["node"]["Output"]["data"];
+    expect(data).toEqual('Received Pong');
   });
-
-  let data = resultsPid3["edges"][0]["node"]["Output"]["data"];
-
-  if(data !== 'Received Pong') {
-    throw new Error(`Did not receive expected message on pid3, got: ${JSON.stringify(resultsPid3["edges"])}`);
-  }
 
   log(`Message passing test successful!`);
+  
+  return runner.getSummary('Message Passing Tests');
 }
 
-run().then(() => { 
-  process.exit(0); 
+run().then((exitCode) => { 
+  process.exit(exitCode); 
 }).catch(err => { 
   console.error(err); 
   process.exit(1); 

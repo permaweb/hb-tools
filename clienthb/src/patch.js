@@ -2,7 +2,7 @@ import fs from 'fs';
 import { createSigner } from '@permaweb/ao-core-libs';
 import { connect } from '@permaweb/aoconnect';
 
-import { parseArgs } from './utils.js';
+import { parseArgs, expect, createTestRunner } from './utils.js';
 
 const { group, flags } = parseArgs('patch.js');
 const configPath = flags.config || 'config.json';
@@ -14,20 +14,17 @@ if (!config[group]) {
 
 const MAINNET_URL = flags.url || config[group].url;
 const MAINNET_SCHEDULER = flags.scheduler || config[group].schedulerAddress;
-const WALLET = config[group].wallet;
+const WALLET = JSON.parse(fs.readFileSync(process.env.PATH_TO_WALLET));
 const SIGNER = createSigner(WALLET);
 
 function log(...args) {
     console.log(`\x1b[32m[HB Client Patch]\x1b[0m`, ...args);
 }
 
-function logError(...args) {
-    console.log(`\x1b[35m[Error]\x1b[0m`, ...args);
-}
-
-const indexLengths = [1000, 5000, 10_000, 25_000, 63_500];
+const indexLengths = [1000, 5000, 10_000, 25_000];
 
 (async function () {
+    const runner = createTestRunner();
     const ao = connect({
         MODE: 'mainnet',
         URL: MAINNET_URL,
@@ -38,27 +35,32 @@ const indexLengths = [1000, 5000, 10_000, 25_000, 63_500];
     for (const length of indexLengths) {
         log(`Index Length: ${length}`);
 
-        const processId = await ao.spawn({
-            tags: [{ name: 'Name', value: new Date().getTime().toString() }],
+        let processId;
+        await runner.test(async () => {
+            processId = await ao.spawn({
+                tags: [{ name: 'Name', value: new Date().getTime().toString() }],
+            });
+            expect(processId).toEqualType('string');
+            log(`Process ID: ${processId}`);
         });
 
-        log(`Process ID: ${processId}`);
-
-        const handlerAddMessage = await ao.message({
-            process: processId,
-            tags: [{ name: 'Action', value: 'Eval' }],
-            data: `
+        await runner.test(async () => {
+            const handlerAddMessage = await ao.message({
+                process: processId,
+                tags: [{ name: 'Action', value: 'Eval' }],
+                data: `
             local json = require('json')
             Index = Index or {}
             Handlers.add('Set-Index', 'Set-Index', function(msg)
                 Index = json.decode(msg.Data)
                 Send({ device = 'patch@1.0', zone = json.encode(Index) })
             end)
-            `,
-            signer: SIGNER,
+                `,
+                signer: SIGNER,
+            });
+            expect(handlerAddMessage).toEqualType('number');
+            log(`Added Handlers | Message: ${handlerAddMessage}`);
         });
-
-        log(`Added Handlers | Message: ${handlerAddMessage}`);
 
         const data = JSON.stringify({
             Index: Array.from({ length: length }, (_, i) => ({
@@ -72,14 +74,14 @@ const indexLengths = [1000, 5000, 10_000, 25_000, 63_500];
 
         log(`Setting Index...`);
 
-        const setIndexMessage = await ao.message({
-            process: processId,
-            tags: [{ name: 'Action', value: 'Set-Index' }],
-            data: data,
-            signer: SIGNER,
-        });
-
-        if (setIndexMessage) {
+        await runner.test(async () => {
+            const setIndexMessage = await ao.message({
+                process: processId,
+                tags: [{ name: 'Action', value: 'Set-Index' }],
+                data: data,
+                signer: SIGNER,
+            });
+            expect(setIndexMessage).toEqualType('number');
             log(`Set Index | Message: ${setIndexMessage}`);
 
             const t1Send = performance.now();
@@ -88,10 +90,13 @@ const indexLengths = [1000, 5000, 10_000, 25_000, 63_500];
             const durationSecSend = (durationMsSend / 1000).toFixed(2);
 
             log(`Message Send: ${durationMsSend}ms (${durationSecSend}s)`);
+        });
 
+        await runner.test(async () => {
             const t0Fetch = performance.now();
 
             const response = await fetch(`${MAINNET_URL}/${processId}/now/zone`);
+            expect(response.ok).toEqual(true);
 
             const t1Fetch = performance.now();
 
@@ -107,12 +112,12 @@ const indexLengths = [1000, 5000, 10_000, 25_000, 63_500];
             const durationSecFetch = (durationMsFetch / 1000).toFixed(2);
 
             log(`Fetch: ${durationMsFetch}ms (${durationSecFetch}s)`);
-        }
-        else logError(`Set Index Failed (Index Length: ${length})`);
+        });
 
         if (length !== indexLengths[indexLengths.length - 1]) console.log('-'.repeat(75));
     }
 
-    process.exit(0);
+    const exitCode = runner.getSummary('Patch Tests');
+    process.exit(exitCode);
 })();
 
