@@ -1,8 +1,7 @@
-
 import fs from 'fs';
 import AOCore, { createSigner } from '@permaweb/ao-core-libs';
 
-import { parseArgs } from './utils.js';
+import { parseArgs, expect, createTestRunner } from './utils.js';
 
 const { group, flags } = parseArgs('core-libs.js');
 const configPath = flags.config || 'config.json';
@@ -14,7 +13,7 @@ if (!config[group]) {
 
 const MAINNET_URL = flags.url || config[group].url;
 const MAINNET_SCHEDULER = flags.scheduler || config[group].schedulerAddress;
-const jwk = config[group].wallet;
+const jwk = JSON.parse(fs.readFileSync(process.env.PATH_TO_WALLET));
 
 let scheduler = MAINNET_SCHEDULER
 const authority = scheduler
@@ -89,6 +88,7 @@ async function retryInitPush(processId, maxAttempts = 10, Name) {
 }
 
 async function runAOFlow() {
+  const runner = createTestRunner();
   let n = Date.now().toString();
 
   const args = {
@@ -113,13 +113,19 @@ async function runAOFlow() {
     ...baseParams
   };
 
-  const response = await aoCore.request(params);
+  let response;
+  let processId;
+  
+  await runner.test(async () => {
+    response = await aoCore.request(params);
+    processId = response.headers.get('process');
+    expect(processId).toEqualType('string');
+  });
 
-  const processId = response.headers.get('process');
-
-  await retryInitPush(processId, 10, n);
-
-  log(`Spawned process ${processId}...`);
+  await runner.test(async () => {
+    await retryInitPush(processId, 10, n);
+    log(`Spawned process ${processId}...`);
+  });
 
   const msgArgs = {
     tags: [
@@ -137,11 +143,16 @@ async function runAOFlow() {
     ...messageBaseParams
   }
 
-  const messageResponse = await aoCore.request(messageParams)
+  let messageResponse;
+  let parsedResponse;
+  
+  await runner.test(async () => {
+    messageResponse = await aoCore.request(messageParams);
+    parsedResponse = await messageResponse.json();
+    expect(messageResponse.ok).toEqual(true);
+  });
 
-  const parsedResponse = await messageResponse.json()
-
-  if(messageResponse.ok) {
+  if(messageResponse?.ok) {
     const resultParams = {
       path: `/${processId}~process@1.0/compute/serialize~json@1.0`,
       target: processId,
@@ -153,25 +164,25 @@ async function runAOFlow() {
       'signing-format': 'ans104'
     }
 
-    const resultResponse = await aoCore.request(resultParams)
-
-    if(resultResponse.status == 200) {
+    await runner.test(async () => {
+      const resultResponse = await aoCore.request(resultParams);
+      expect(resultResponse.status).toEqual(200);
+      
       const resultData = await resultResponse.json();
       console.log("Result Data:", JSON.stringify(resultData, null, 2));
       log(`Read result, AO flow was successful!`);
-    } else {
-      throw new Error(`Failed to read result, status: ${resultResponse.status}`);
-    }
+    });
   }
+  
+  return runner.getSummary('Core Libs Tests');
 }
 
 async function run() {
-  await runAOFlow();
+  const exitCode = await runAOFlow();
+  process.exit(exitCode);
 }
 
-run().then(() => { 
-  process.exit(0); 
-}).catch(err => { 
+run().catch(err => { 
   console.error(err); 
   process.exit(1); 
 });

@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "clean:install": "rm -rf node_modules package-lock.json || true && npm cache clean --force && npm install",
     "test": "echo \"Error: no test specified\" && exit 1",
     "run-group": "node run-group.js"
   },
@@ -12,7 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@permaweb/ao-core-libs": "^0.0.3",
+    "@permaweb/ao-core-libs": "^0.0.5",
     "@permaweb/aoconnect": "file:../../ao/connect"
   }
 }

@@ -98,19 +98,43 @@ function runScript(scriptName) {
   });
 }
 
+// Function to parse test results from output
+function parseTestResults(stdout) {
+  const match = stdout.match(/TEST_RESULTS: passed=(\d+) failed=(\d+) total=(\d+)/);
+  if (match) {
+    return {
+      passed: parseInt(match[1]),
+      failed: parseInt(match[2]),
+      total: parseInt(match[3])
+    };
+  }
+  return null;
+}
+
 // Run all scripts sequentially
 async function runScriptsSequentially() {
   const results = [];
+  let totalTestsPassed = 0;
+  let totalTestsFailed = 0;
   
   for (const scriptName of scripts) {
     try {
       console.log(`\nRunning ${scriptName}...`);
       const result = await runScript(scriptName);
       results.push({ status: 'fulfilled', value: result });
-      console.log(`✅ ${scriptName} completed successfully`);
+      
+      // Parse test results if available
+      const testResults = parseTestResults(result.stdout);
+      if (testResults) {
+        totalTestsPassed += testResults.passed;
+        totalTestsFailed += testResults.failed;
+        console.log(`\x1b[32m[SUCCESS]\x1b[0m ${scriptName} completed successfully (${testResults.passed} passed, ${testResults.failed} failed)`);
+      } else {
+        console.log(`\x1b[32m[SUCCESS]\x1b[0m ${scriptName} completed successfully`);
+      }
     } catch (error) {
       results.push({ status: 'rejected', reason: error });
-      console.log(`❌ ${scriptName} failed: ${error.error ? error.error.message : `exit code ${error.code}`}`);
+      console.log(`\x1b[31m[FAILED]\x1b[0m ${scriptName} failed: ${error.error ? error.error.message : `exit code ${error.code}`}`);
       
       // Stop execution on first failure
       console.log('\n--- Execution stopped due to failure ---');
@@ -123,24 +147,31 @@ async function runScriptsSequentially() {
   const successful = results.filter(r => r.status === 'fulfilled');
   const failed = results.filter(r => r.status === 'rejected');
   
-  console.log(`Successful: ${successful.length}/${scripts.length}`);
+  console.log(`Scripts: ${successful.length}/${scripts.length} successful`);
+  
+  const totalTests = totalTestsPassed + totalTestsFailed;
+  if (totalTests > 0) {
+    console.log(`\nTotal Test Summary:`);
+    console.log(`   \x1b[32mPassed\x1b[0m: ${totalTestsPassed}`);
+    console.log(`   \x1b[${totalTestsFailed > 0 ? '31' : '90'}mFailed\x1b[0m: ${totalTestsFailed}`);
+    console.log(`   Total: ${totalTests}`);
+  }
   
   if (successful.length > 0) {
-    console.log('✅ Completed scripts:');
+    console.log('\x1b[32mCompleted scripts:\x1b[0m');
     successful.forEach(result => {
       console.log(`  - ${result.value.script}`);
     });
   }
   
   if (failed.length > 0) {
-    console.log('❌ Failed scripts:');
+    console.log('\x1b[31mFailed scripts:\x1b[0m');
     failed.forEach(result => {
       const reason = result.reason;
       console.log(`  - ${reason.script}: ${reason.error ? reason.error.message : `exit code ${reason.code}`}`);
     });
   }
   
-  // Exit with error code if any script failed
   process.exit(failed.length > 0 ? 1 : 0);
 }
 
