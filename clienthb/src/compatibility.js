@@ -7,8 +7,10 @@ const { group, flags } = parseArgs('compatibility.js');
 const configPath = flags.config || 'config.json';
 const config = JSON.parse(fs.readFileSync(configPath));
 
-const MAINNET_URL = flags.url || config[group].url;
-const MAINNET_SCHEDULER = flags.scheduler || config[group].schedulerAddress;
+const groupConfig = { ...config.defaults, ...config[group] };
+
+const MAINNET_URL = flags.url || groupConfig.url;
+const MAINNET_SCHEDULER = flags.scheduler || groupConfig.schedulerAddress;
 const WALLET = JSON.parse(fs.readFileSync(process.env.PATH_TO_WALLET));
 const SIGNER = createSigner(WALLET);
 
@@ -34,7 +36,7 @@ async function runConnect(mode) {
 
     let spawnArgs = { tags: [{ name: 'Name', value: Date.now().toString() }] };
 
-    spawnArgs.module = config[group].aosModule;
+    spawnArgs.module = groupConfig.aosModule;
 
     if (!useMainnet) {
         spawnArgs.scheduler = '_GQ33BkPtZrqxA84vM8Zk-N2aO0toNNu_C-l-rawrBA';
@@ -160,18 +162,18 @@ async function runConnect(mode) {
         expect(messages).toEqualLength(2);
     });
 
-    // // TODO
-    // let dryrun;
-    // await runner.test(async () => {
-    //     dryrun = await ao.dryrun({
-    //         process: processId,
-    //         tags: [
-    //             { name: 'Action', value: 'Info' },
-    //             { name: 'Test', value: 'Dryrun' }
-    //         ]
-    //     });
-    //     modeLog(mode, `Dryrun | Result: ${JSON.stringify(dryrun, null, 2)}`);
-    // });
+    // TODO
+    let dryrun;
+    await runner.test(async () => {
+        dryrun = await ao.dryrun({
+            process: processId,
+            tags: [
+                { name: 'Action', value: 'Info' },
+                { name: 'Test', value: 'Dryrun' }
+            ]
+        });
+        modeLog(mode, `Dryrun | Result: ${JSON.stringify(dryrun, null, 2)}`);
+    });
 
     exitCode = runner.getSummary('HB Tools Compatibility Tests');
 }
