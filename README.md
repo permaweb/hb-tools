@@ -22,22 +22,18 @@ Compatibility / Load Tests built in JavaScript.
 {
   "local_basic": {
     "url": "http://localhost:8734",
-    "schedulerAddress": "NoZH3pueH0Cih6zjSNu_KRAcmg4ZJV1aGHKi0Pi5_Hc",
-    "scripts": [
-      "core-libs.js",
-      "compatibility.js",
-      "message-passing.js",
-      "patch.js",
-      "volume.js"
-    ]
+    "schedulerAddress": "NoZH3pueH0Cih6zjSNu_KRAcmg4ZJV1aGHKi0Pi5_Hc"
   }
 }
 ```
 
 Each group must include:
 
-- `url` - AO network node URL (e.g., `http://localhost:8734` for local, `https://mainnet.ao.dev` for production)
+- `url` - HyperBEAM URL (e.g., `http://localhost:8734`)
+
+Each field specified in `defaults` can be overridden.
 - `schedulerAddress` - Scheduler process address for handling message ordering
+- `aosModule` - Process module to use when spawning
 - `scripts` - Array of script filenames to run with `run-group.js` (optional)
 
 #### Required Environment Variables
