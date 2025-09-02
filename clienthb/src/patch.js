@@ -37,6 +37,7 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
         let processId;
         await runner.test(async () => {
             processId = await ao.spawn({
+                module: config[group].aosModule,
                 tags: [{ name: 'Name', value: new Date().getTime().toString() }],
             });
             expect(processId).toEqualType('string');

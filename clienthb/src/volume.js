@@ -6,9 +6,9 @@ import { performance } from 'perf_hooks';
 import { parseArgs, expect, createTestRunner } from './utils.js';
 
 // Default values - can be overridden by CLI flags
-let TOTAL_SPAWNS = 5;                  // Total processes to spawn across all workers
-let TOTAL_MESSAGES = 10;               // Total Info messages to send across all workers
-let WORKERS = 2;                        // Number of worker threads
+let TOTAL_SPAWNS = 10;                  // Total processes to spawn across all workers
+let TOTAL_MESSAGES = 100;               // Total Info messages to send across all workers
+let WORKERS = 4;                        // Number of worker threads
 
 // Rate limits (global totals; each worker gets an even share)
 const RATE_SPAWNS_PER_SEC = 2;         // Max spawn ops per second across all workers
@@ -134,6 +134,7 @@ async function workerRun({
         await runner.test(async () => {
             await spawnLimiter.take();
             const pid = await ao.spawn({
+                module: config[group].aosModule,
                 tags: [{ name: 'Name', value: `${Date.now()}-${workerIndex}-${i}` }],
             });
             expect(pid).toEqualType('string');
@@ -161,6 +162,7 @@ async function workerRun({
         await runner.test(async () => {
             await spawnLimiter.take();
             const pid = await ao.spawn({
+                module: config[group].aosModule,
                 tags: [{ name: 'Name', value: `fallback-${Date.now()}-${workerIndex}` }],
             });
             expect(pid).toEqualType('string');
@@ -199,7 +201,7 @@ async function workerRun({
     const durationMs = Math.round(t1 - t0);
 
     log(`Worker ${workerIndex}: Completed in ${durationMs}ms - spawns: ${spawnCount}/${mySpawns}, handlers: ${handlerMsgCount}, messages: ${infoMsgCount}/${myMsgs}`);
-    
+
     const exitCode = runner.getSummary(`Worker ${workerIndex} Volume Tests`);
 
     return {
