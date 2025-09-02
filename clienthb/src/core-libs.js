@@ -8,7 +8,7 @@ const configPath = flags.config || 'config.json';
 const config = JSON.parse(fs.readFileSync(configPath));
 
 if (!config[group]) {
-  throw new Error(`Group "${group}" not found in ${configPath}`);
+  throw new Error(`Group '${group}' not found in ${configPath}`);
 }
 
 const MAINNET_URL = flags.url || config[group].url;
@@ -169,7 +169,7 @@ async function runAOFlow() {
       expect(resultResponse.status).toEqual(200);
       
       const resultData = await resultResponse.json();
-      console.log("Result Data:", JSON.stringify(resultData, null, 2));
+      console.log('Result Data:', JSON.stringify(resultData, null, 2));
       log(`Read result, AO flow was successful!`);
     });
   }

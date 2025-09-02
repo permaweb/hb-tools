@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "clean:install": "rm -rf node_modules package-lock.json || true && npm cache clean --force && npm install",
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "run-group": "node run-group.js"
+    "group": "node run-group.js"
   },
   "keywords": [],
   "author": "",

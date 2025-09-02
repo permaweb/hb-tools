@@ -1,6 +1,5 @@
 import fs from 'fs';
-import { createSigner } from '@permaweb/ao-core-libs';
-import { connect } from '@permaweb/aoconnect';
+import { connect, createSigner } from '@permaweb/aoconnect';
 
 import { expect, parseArgs, createTestRunner } from './utils.js';
 
@@ -160,6 +159,7 @@ async function runConnect(mode) {
         expect(messages).toEqualLength(2);
     });
 
+    // TODO
     let dryrun;
     await runner.test(async () => {
         dryrun = await ao.dryrun({
