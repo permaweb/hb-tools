@@ -2,7 +2,7 @@ import fs from 'fs';
 import { createSigner } from '@permaweb/ao-core-libs';
 import { connect } from '@permaweb/aoconnect';
 
-import { parseArgs } from './utils.js';
+import { expect, parseArgs, createTestRunner } from './utils.js';
 
 const { group, flags } = parseArgs('compatibility.js');
 const configPath = flags.config || 'config.json';
@@ -10,7 +10,7 @@ const config = JSON.parse(fs.readFileSync(configPath));
 
 const MAINNET_URL = flags.url || config[group].url;
 const MAINNET_SCHEDULER = flags.scheduler || config[group].schedulerAddress;
-const WALLET = config[group].wallet;
+const WALLET = JSON.parse(fs.readFileSync(process.env.PATH_TO_WALLET));
 const SIGNER = createSigner(WALLET);
 
 function modeLog(mode, ...args) {
@@ -18,7 +18,11 @@ function modeLog(mode, ...args) {
     console.log(`\x1b[${ansi}m[${mode.toUpperCase()}]\x1b[0m`, ...args);
 }
 
+let exitCode = 0;
+
 async function runConnect(mode) {
+    const runner = createTestRunner();
+
     const useMainnet = mode === 'mainnet';
 
     let connectDeps = { MODE: useMainnet ? 'mainnet' : 'legacy', signer: SIGNER };
@@ -27,18 +31,8 @@ async function runConnect(mode) {
         connectDeps.SCHEDULER = MAINNET_SCHEDULER;
     };
 
-    console.log('connectDeps', connectDeps);
     const ao = connect(connectDeps);
 
-    // /* ------------------------------------------------------------------- */
-    // const r = await ao.result({
-    //     process: 'VgfmfEW0wrRjjJunPmO5RaO7XyfWFQj5efPyetf2dbE',
-    //     message: '3'
-    // });
-
-    // console.log(JSON.stringify(r, null, 2));
-    // /* ------------------------------------------------------------------- */
-    
     let spawnArgs = { tags: [{ name: 'Name', value: Date.now().toString() }] };
 
     if (!useMainnet) {
@@ -47,108 +41,141 @@ async function runConnect(mode) {
         spawnArgs.signer = SIGNER;
     }
 
-    console.log('spawnArgs', spawnArgs);
-    const processId = await ao.spawn(spawnArgs);
-
-    modeLog(mode, `Process ID: ${processId}`);
-
-    const versionMessage = await ao.message({
-        process: processId,
-        tags: [{ name: 'Action', value: 'Eval' }],
-        data: `require('.process')._version`,
-        signer: SIGNER
+    let processId;
+    await runner.test(async () => {
+        processId = await ao.spawn(spawnArgs);
+        modeLog(mode, `Process ID: ${processId}`);
+        expect(processId).toEqualType('string');
     });
 
-    modeLog(mode, `Message: ${versionMessage}`);
-
-    const versionResult = await ao.result({
-        process: processId,
-        message: versionMessage
+    let versionMessage;
+    await runner.test(async () => {
+        versionMessage = await ao.message({
+            process: processId,
+            tags: [{ name: 'Action', value: 'Eval' }],
+            data: `require('.process')._version`,
+            signer: SIGNER
+        });
+        modeLog(mode, `Message: ${versionMessage}`);
+        expect(versionMessage).toEqualType('number');
     });
 
-    modeLog(mode, `Result: ${JSON.stringify(versionResult, null, 2)}`);
-
-    modeLog(mode, `Result Data: ${versionResult.Output?.data}`);
-
-    const handlerAddMessage = await ao.message({
-        process: processId,
-        tags: [{ name: 'Action', value: 'Eval' }],
-        data: `
-        Handlers.add('Info', 'Info', function(msg)
-            ao.send({
-                Target = msg.From,
-                Data = require('json').encode({ Hello = 'World' })
-            })
-            ao.send({
-                Target = msg.From,
-                Data = require('json').encode({ Hello = 'World 2' })
-            })
-        end)
-        `,
-        signer: SIGNER,
+    let versionResult;
+    await runner.test(async () => {
+        versionResult = await ao.result({
+            process: processId,
+            message: versionMessage
+        });
+        const data = versionResult.Output?.data;
+        modeLog(mode, `Result Data: ${data}`);
+        expect(data).toEqualType('string');
     });
 
-    modeLog(mode, `Added Handlers | Message: ${handlerAddMessage}`);
-
-    const handlerAddResult = await ao.result({
-        process: processId,
-        message: handlerAddMessage
+    let handlerAddMessage;
+    await runner.test(async () => {
+        handlerAddMessage = await ao.message({
+            process: processId,
+            tags: [{ name: 'Action', value: 'Eval' }],
+            data: `
+                Handlers.add('Info', 'Info', function(msg)
+                    ao.send({
+                        Target = msg.From,
+                        Data = require('json').encode({ Hello = 'World' })
+                    })
+                    ao.send({
+                        Target = msg.From,
+                        Data = require('json').encode({ Hello = 'World 2' })
+                    })
+                end)
+            `,
+            signer: SIGNER,
+        });
+        modeLog(mode, `Added Handlers | Message: ${handlerAddMessage}`);
+        expect(handlerAddMessage).toEqualType('number');
     });
 
-    modeLog(mode, `Added Handlers | Result: ${JSON.stringify(handlerAddResult, null, 2)}`);
-
-    const handlerReadMessage = await ao.message({
-        process: processId,
-        tags: [{ name: 'Action', value: 'Eval' }],
-        data: `Handlers.list`,
-        signer: SIGNER,
+    let handlerAddResult;
+    await runner.test(async () => {
+        handlerAddResult = await ao.result({
+            process: processId,
+            message: handlerAddMessage
+        });
+        const data = handlerAddResult.Output?.data;
+        modeLog(mode, `Result Data: ${data}`);
+        expect(data).toEqualType('string');
     });
 
-    modeLog(mode, `Read Handlers | Message: ${handlerReadMessage}`);
-
-    const handlerReadResult = await ao.result({
-        process: processId,
-        message: handlerReadMessage
+    let handlerReadMessage;
+    await runner.test(async () => {
+        handlerReadMessage = await ao.message({
+            process: processId,
+            tags: [{ name: 'Action', value: 'Eval' }],
+            data: `Handlers.list`,
+            signer: SIGNER,
+        });
+        modeLog(mode, `Read Handlers | Message: ${handlerReadMessage}`);
+        expect(handlerReadMessage).toEqualType('number');
     });
 
-    modeLog(mode, `Read Handlers | Result: ${JSON.stringify(handlerReadResult, null, 2)}`);
-
-    const infoMessage = await ao.message({
-        process: processId,
-        tags: [{ name: 'Action', value: 'Info' }],
-        signer: SIGNER
+    let handlerReadResult;
+    await runner.test(async () => {
+        handlerReadResult = await ao.result({
+            process: processId,
+            message: handlerReadMessage
+        });
+        const data = handlerReadResult.Output?.data;
+        modeLog(mode, `Result Data: ${data}`);
+        expect(data).toEqualType('string');
     });
 
-    modeLog(mode, `Action: Info | Message: ${infoMessage}`);
-
-    const infoResult = await ao.result({
-        process: processId,
-        message: infoMessage
+    let infoMessage;
+    await runner.test(async () => {
+        infoMessage = await ao.message({
+            process: processId,
+            tags: [{ name: 'Action', value: 'Info' }],
+            signer: SIGNER
+        });
+        modeLog(mode, `Action: Info | Message: ${infoMessage}`);
+        expect(infoMessage).toEqualType('number');
     });
 
-    modeLog(mode, `Action: Info | Result: ${JSON.stringify(infoResult, null, 2)}`);
-
-    const results = await ao.results({
-        process: processId
+    let infoResult;
+    await runner.test(async () => {
+        infoResult = await ao.result({
+            process: processId,
+            message: infoMessage
+        });
+        const messages = infoResult?.Messages;
+        modeLog(mode, `Info Result Messages: ${JSON.stringify(messages, null, 2)}`);
+        expect(messages).toEqualLength(2);
     });
 
-    modeLog(mode, `Results: ${JSON.stringify(results, null, 2)}`);
-
-    await new Promise((r) => setTimeout(r, 1000))
-
-    const dryrun = await ao.dryrun({
-        process: processId,
-        tags: [
-            { name: 'Action', value: 'Info' },
-            {name:'test', value:'dryrun'}
-        ]
+    let results;
+    await runner.test(async () => {
+        results = await ao.results({
+            process: processId
+        });
+        const messages = results?.edges?.[0].node?.Messages;
+        modeLog(mode, `Results Messages: ${JSON.stringify(messages, null, 2)}`);
+        expect(messages).toEqualLength(2);
     });
 
-    modeLog(mode, `Dryrun | Result: ${JSON.stringify(dryrun, null, 2)}`);
+    let dryrun;
+    await runner.test(async () => {
+        dryrun = await ao.dryrun({
+            process: processId,
+            tags: [
+                { name: 'Action', value: 'Info' },
+                { name: 'Test', value: 'Dryrun' }
+            ]
+        });
+        modeLog(mode, `Dryrun | Result: ${JSON.stringify(dryrun, null, 2)}`);
+    });
+
+    exitCode = runner.getSummary('HB Tools Compatibility Tests');
 }
 
 (async function () {
     await runConnect('mainnet');
-    // await runConnect('legacy');
-    process.exit(0);
+    process.exit(exitCode);
 })();

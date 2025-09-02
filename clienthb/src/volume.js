@@ -4,11 +4,11 @@ import { connect } from '@permaweb/aoconnect';
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 import { performance } from 'perf_hooks';
 
-import { parseArgs } from './utils.js';
+import { parseArgs, expect, createTestRunner } from './utils.js';
 
 // Default values - can be overridden by CLI flags
-let TOTAL_SPAWNS = 10;                  // Total processes to spawn across all workers
-let TOTAL_MESSAGES = 100;               // Total Info messages to send across all workers
+let TOTAL_SPAWNS = 5;                  // Total processes to spawn across all workers
+let TOTAL_MESSAGES = 10;               // Total Info messages to send across all workers
 let WORKERS = 2;                        // Number of worker threads
 
 // Rate limits (global totals; each worker gets an even share)
@@ -92,13 +92,14 @@ async function workerRun({
     workerCount,
     overrides = {},
 }) {
+    const runner = createTestRunner();
     log(`Worker ${workerIndex}: Starting initialization`);
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     if (!config[group]) throw new Error(`Group "${group}" not found in ${configPath}`);
 
     const MAINNET_URL = overrides.url || config[group].url;
     const MAINNET_SCHEDULER = overrides.scheduler || config[group].schedulerAddress;
-    const WALLET = config[group].wallet;
+    const WALLET = JSON.parse(fs.readFileSync(process.env.PATH_TO_WALLET));
 
     const SIGNER = createSigner(WALLET);
     const ao = connect({
@@ -131,11 +132,12 @@ async function workerRun({
     const processIds = [];
     log(`Worker ${workerIndex}: Starting ${mySpawns} process spawns with concurrency ${caps.spawnConcurrency}`);
     await mapWithConcurrency(spawnJobs, caps.spawnConcurrency, async (i) => {
-        try {
+        await runner.test(async () => {
             await spawnLimiter.take();
             const pid = await ao.spawn({
                 tags: [{ name: 'Name', value: `${Date.now()}-${workerIndex}-${i}` }],
             });
+            expect(pid).toEqualType('string');
             log(`Process ID: ${pid}`);
             spawnCount++;
             processIds.push(pid);
@@ -145,35 +147,34 @@ async function workerRun({
 
             await msgLimiter.take(); // Treat handler install as a message op
             const message = await addHandlers(ao, pid, SIGNER);
+            expect(message).toEqualType('number');
             log(`Handlers Add: ${message}`);
             handlerMsgCount++;
             if (handlerMsgCount % 10 === 0 || handlerMsgCount === mySpawns) {
                 log(`Worker ${workerIndex}: Installed handlers on ${handlerMsgCount}/${mySpawns} processes`);
             }
-        } catch {
-            // Swallow per-op failures for volume testing
-        }
+        });
     });
 
     // If messages requested but no pids, make one fallback pid
     if (myMsgs > 0 && processIds.length === 0) {
         log(`Worker ${workerIndex}: No processes available, creating fallback process for messages`);
-        try {
+        await runner.test(async () => {
             await spawnLimiter.take();
             const pid = await ao.spawn({
                 tags: [{ name: 'Name', value: `fallback-${Date.now()}-${workerIndex}` }],
             });
+            expect(pid).toEqualType('string');
             spawnCount++;
             processIds.push(pid);
             log(`Worker ${workerIndex}: Created fallback process ${pid}`);
 
             await msgLimiter.take();
             const message = await addHandlers(ao, pid, SIGNER);
+            expect(message).toEqualType('number');
             log(`Handlers Add: ${message}`);
             handlerMsgCount++;
-        } catch {
-            log(`Worker ${workerIndex}: Failed to create fallback process - messages cannot be sent`);
-        }
+        });
     }
 
     const msgJobs = Array.from({ length: myMsgs }, (_, i) => i);
@@ -183,23 +184,24 @@ async function workerRun({
     await mapWithConcurrency(msgJobs, caps.msgConcurrency, async (m) => {
         const pid = processIds.length ? processIds[m % processIds.length] : null;
         if (!pid) return;
-        try {
+        await runner.test(async () => {
             await msgLimiter.take();
             const message = await triggerInfo(ao, pid, SIGNER);
+            expect(message).toEqualType('number');
             log(`Info Trigger: ${message}`);
             infoMsgCount++;
             if (infoMsgCount % 25 === 0 || infoMsgCount === myMsgs) {
                 log(`Worker ${workerIndex}: Sent ${infoMsgCount}/${myMsgs} Info messages`);
             }
-        } catch {
-            // Swallow
-        }
+        });
     });
 
     const t1 = performance.now();
     const durationMs = Math.round(t1 - t0);
 
     log(`Worker ${workerIndex}: Completed in ${durationMs}ms - spawns: ${spawnCount}/${mySpawns}, handlers: ${handlerMsgCount}, messages: ${infoMsgCount}/${myMsgs}`);
+    
+    const exitCode = runner.getSummary(`Worker ${workerIndex} Volume Tests`);
 
     return {
         workerIndex,
@@ -210,6 +212,7 @@ async function workerRun({
         infoMsgCount,
         durationMs,
         perWorkerRates: { spawnsRate, msgsRate },
+        exitCode,
     };
 }
 
@@ -271,9 +274,10 @@ if (isMainThread) {
                     a.infoMsgCount += r.infoMsgCount;
                     a.workerDurations.push({ worker: r.workerIndex, ms: r.durationMs });
                     a.workerRates.push({ worker: r.workerIndex, spawnsRate: r.perWorkerRates.spawnsRate, msgsRate: r.perWorkerRates.msgsRate });
+                    a.totalExitCode = Math.max(a.totalExitCode, r.exitCode || 0);
                     return a;
                 },
-                { spawnCount: 0, handlerMsgCount: 0, infoMsgCount: 0, workerDurations: [], workerRates: [] }
+                { spawnCount: 0, handlerMsgCount: 0, infoMsgCount: 0, workerDurations: [], workerRates: [], totalExitCode: 0 }
             );
 
             const elapsed = Math.round(performance.now() - start);
@@ -285,7 +289,7 @@ if (isMainThread) {
             log(`Per-worker durations (ms):`, agg.workerDurations);
             log(`Elapsed (ms): ${elapsed}`);
 
-            process.exit(0);
+            process.exit(agg.totalExitCode);
         } catch (e) {
             console.error(e);
             process.exit(1);
