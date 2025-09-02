@@ -2,11 +2,9 @@
 
 A suite of integration, compatibility, and performance testing utilities for AO / HyperBEAM. These tools validate AO Connect API behavior, stress test message throughput, and benchmark process performance—helping ensure reliability, backwards compatibility, and scalability across HyperBEAM deployments.
 
-## Modules
+## ClientHB
 
-### ClientHB
-
-AO client tools for integration and load testing. ClientHB provides a comprehensive test suite for validating AO network functionality, from basic compatibility checks to high-volume stress testing.
+Compatibility / Load Tests built in JavaScript.
 
 #### Key Features
 
@@ -71,14 +69,14 @@ To add a new test script:
 
 ```bash
 # Quick validation
-node run-group.js local_basic
+npm run group local_basic
 
 # Individual component testing
 node src/compatibility.js local_basic
 node src/message-passing.js local_basic
 ```
 
-## Monitoring and Metrics
+#### Monitoring and Metrics
 
 The test scripts output various metrics that can be used for monitoring:
 
@@ -86,3 +84,17 @@ The test scripts output various metrics that can be used for monitoring:
 - **Throughput**: Messages or operations per second
 - **Latency**: Response time distributions (p50, p95, p99)
 - **Error Types**: Classification of failures for debugging
+
+#### Performance Tuning
+
+###### Volume Test Parameters
+
+When running volume tests (`volume.js`), you can fine-tune performance by adjusting these parameters in the script:
+
+| Parameter                      | Default | Description                                               |
+| ------------------------------ | ------- | --------------------------------------------------------- |
+| `RATE_SPAWNS_PER_SEC`          | 20      | Maximum process spawns per second                         |
+| `RATE_MSGS_PER_SEC`            | 100     | Maximum messages sent per second                          |
+| `JITTER_MS`                    | ±50ms   | Random timing variation to simulate real-world conditions |
+| `CONCURRENCY_SPAWN_PER_WORKER` | 1       | Concurrent spawns per worker thread                       |
+| `CONCURRENCY_MSG_PER_WORKER`   | 10      | Concurrent messages per worker thread                     |

@@ -1,6 +1,5 @@
 import fs from 'fs';
-import { createSigner } from '@permaweb/ao-core-libs';
-import { connect } from '@permaweb/aoconnect';
+import { connect, createSigner } from '@permaweb/aoconnect';
 
 import { parseArgs, expect, createTestRunner } from './utils.js';
 
@@ -9,7 +8,7 @@ const configPath = flags.config || 'config.json';
 const config = JSON.parse(fs.readFileSync(configPath));
 
 function log(...args) {
-    console.log(`\x1b[36m[Message Passing]\x1b[0m`, ...args);
+  console.log(`\x1b[36m[Message Passing]\x1b[0m`, ...args);
 }
 
 async function spawnNew(ao, SIGNER) {
@@ -18,20 +17,19 @@ async function spawnNew(ao, SIGNER) {
   const processId = await ao.spawn(spawnArgs);
 
   await ao.message({
-      process: processId,
-      tags: [{ name: 'Action', value: 'Eval' }],
-      data: `require('.process')._version`,
-      signer: SIGNER
+    process: processId,
+    tags: [{ name: 'Action', value: 'Eval' }],
+    data: `require('.process')._version`,
+    signer: SIGNER
   });
 
   return processId;
 }
 
-
 async function run() {
   const runner = createTestRunner();
   log(`Running message passing tests...`);
-  if (!config[group]) throw new Error(`Group "${group}" not found in ${configPath}`);
+  if (!config[group]) throw new Error(`Group '${group}' not found in ${configPath}`);
 
   const MAINNET_URL = flags.url || config[group].url;
   const MAINNET_SCHEDULER = flags.scheduler || config[group].schedulerAddress;
@@ -39,30 +37,30 @@ async function run() {
 
   const SIGNER = createSigner(WALLET);
   const ao = connect({
-      MODE: 'mainnet',
-      URL: MAINNET_URL,
-      SCHEDULER: MAINNET_SCHEDULER,
-      signer: SIGNER,
+    MODE: 'mainnet',
+    URL: MAINNET_URL,
+    SCHEDULER: MAINNET_SCHEDULER,
+    signer: SIGNER,
   });
 
   let pid1, pid2, pid3;
-  
+
   await runner.test(async () => {
     pid1 = await spawnNew(ao, SIGNER);
     expect(pid1).toEqualType('string');
   });
-  
+
   await runner.test(async () => {
     pid2 = await spawnNew(ao, SIGNER);
     expect(pid2).toEqualType('string');
   });
-  
+
   await runner.test(async () => {
     pid3 = await spawnNew(ao, SIGNER);
     expect(pid3).toEqualType('string');
   });
 
-  log(`Processes: `, pid1, pid2, pid3);
+  log(`Processes: ${JSON.stringify([pid1, pid2, pid3], null, 2)}`);
 
   const code = `
 Handlers.add('Info', 'Info', function(msg)
@@ -73,10 +71,10 @@ end)
 
   await runner.test(async () => {
     const message = await ao.message({
-        process: pid2,
-        tags: [{ name: 'Action', value: 'Eval' }],
-        data: code,
-        signer: SIGNER,
+      process: pid2,
+      tags: [{ name: 'Action', value: 'Eval' }],
+      data: code,
+      signer: SIGNER,
     });
     expect(message).toEqualType('number');
   });
@@ -89,23 +87,23 @@ end)
 
   await runner.test(async () => {
     const message = await ao.message({
-        process: pid3,
-        tags: [{ name: 'Action', value: 'Eval' }],
-        data: codePong,
-        signer: SIGNER,
+      process: pid3,
+      tags: [{ name: 'Action', value: 'Eval' }],
+      data: codePong,
+      signer: SIGNER,
     });
     expect(message).toEqualType('number');
   });
 
-  
+
   await runner.test(async () => {
     const message = await ao.message({
-        process: pid1,
-        tags: [{ name: 'Action', value: 'Eval' }],
-        data: `
+      process: pid1,
+      tags: [{ name: 'Action', value: 'Eval' }],
+      data: `
 ao.send({ Target = '${pid2}', Data = 'ping', Action = 'Info' })
         `.trim(),
-        signer: SIGNER,
+      signer: SIGNER,
     });
     expect(message).toEqualType('number');
   });
@@ -114,21 +112,21 @@ ao.send({ Target = '${pid2}', Data = 'ping', Action = 'Info' })
 
   await runner.test(async () => {
     const resultsPid3 = await ao.results({
-        process: pid3
+      process: pid3
     });
-    
-    let data = resultsPid3["edges"][0]["node"]["Output"]["data"];
+
+    let data = resultsPid3['edges'][0]['node']['Output']['data'];
     expect(data).toEqual('Received Pong');
   });
 
   log(`Message passing test successful!`);
-  
+
   return runner.getSummary('Message Passing Tests');
 }
 
-run().then((exitCode) => { 
-  process.exit(exitCode); 
-}).catch(err => { 
-  console.error(err); 
-  process.exit(1); 
+run().then((exitCode) => {
+  process.exit(exitCode);
+}).catch(err => {
+  console.error(err);
+  process.exit(1);
 });
