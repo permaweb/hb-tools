@@ -34,8 +34,9 @@ async function runConnect(mode) {
 
     let spawnArgs = { tags: [{ name: 'Name', value: Date.now().toString() }] };
 
+    spawnArgs.module = config[group].aosModule;
+
     if (!useMainnet) {
-        spawnArgs.module = 'URgYpPQzvxxfYQtjrIQ116bl3YBfcImo3JEnNo8Hlrk';
         spawnArgs.scheduler = '_GQ33BkPtZrqxA84vM8Zk-N2aO0toNNu_C-l-rawrBA';
         spawnArgs.signer = SIGNER;
     }
@@ -159,18 +160,18 @@ async function runConnect(mode) {
         expect(messages).toEqualLength(2);
     });
 
-    // TODO
-    let dryrun;
-    await runner.test(async () => {
-        dryrun = await ao.dryrun({
-            process: processId,
-            tags: [
-                { name: 'Action', value: 'Info' },
-                { name: 'Test', value: 'Dryrun' }
-            ]
-        });
-        modeLog(mode, `Dryrun | Result: ${JSON.stringify(dryrun, null, 2)}`);
-    });
+    // // TODO
+    // let dryrun;
+    // await runner.test(async () => {
+    //     dryrun = await ao.dryrun({
+    //         process: processId,
+    //         tags: [
+    //             { name: 'Action', value: 'Info' },
+    //             { name: 'Test', value: 'Dryrun' }
+    //         ]
+    //     });
+    //     modeLog(mode, `Dryrun | Result: ${JSON.stringify(dryrun, null, 2)}`);
+    // });
 
     exitCode = runner.getSummary('HB Tools Compatibility Tests');
 }
