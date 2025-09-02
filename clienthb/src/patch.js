@@ -11,8 +11,10 @@ if (!config[group]) {
   throw new Error(`Group '${group}' not found in ${configPath}`);
 }
 
-const MAINNET_URL = flags.url || config[group].url;
-const MAINNET_SCHEDULER = flags.scheduler || config[group].schedulerAddress;
+const groupConfig = { ...config.defaults, ...config[group] };
+
+const MAINNET_URL = flags.url || groupConfig.url;
+const MAINNET_SCHEDULER = flags.scheduler || groupConfig.schedulerAddress;
 const WALLET = JSON.parse(fs.readFileSync(process.env.PATH_TO_WALLET));
 const SIGNER = createSigner(WALLET);
 
@@ -37,7 +39,7 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
         let processId;
         await runner.test(async () => {
             processId = await ao.spawn({
-                module: config[group].aosModule,
+                module: groupConfig.aosModule,
                 tags: [{ name: 'Name', value: new Date().getTime().toString() }],
             });
             expect(processId).toEqualType('string');

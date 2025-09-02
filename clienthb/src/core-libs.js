@@ -11,13 +11,15 @@ if (!config[group]) {
   throw new Error(`Group '${group}' not found in ${configPath}`);
 }
 
-const MAINNET_URL = flags.url || config[group].url;
-const MAINNET_SCHEDULER = flags.scheduler || config[group].schedulerAddress;
+const groupConfig = { ...config.defaults, ...config[group] };
+
+const MAINNET_URL = flags.url || groupConfig.url;
+const MAINNET_SCHEDULER = flags.scheduler || groupConfig.schedulerAddress;
 const jwk = JSON.parse(fs.readFileSync(process.env.PATH_TO_WALLET));
 
 let scheduler = MAINNET_SCHEDULER;
 const authority = scheduler;
-const module = config[group].aosModule;
+const module = groupConfig.aosModule;
 const aoCore = AOCore.init({ signer: createSigner(jwk), url: MAINNET_URL });
 
 const baseParams = {

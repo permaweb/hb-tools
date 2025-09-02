@@ -96,8 +96,10 @@ async function workerRun({
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     if (!config[group]) throw new Error(`Group '${group}' not found in ${configPath}`);
 
-    const MAINNET_URL = overrides.url || config[group].url;
-    const MAINNET_SCHEDULER = overrides.scheduler || config[group].schedulerAddress;
+    const groupConfig = { ...config.defaults, ...config[group] };
+
+    const MAINNET_URL = overrides.url || groupConfig.url;
+    const MAINNET_SCHEDULER = overrides.scheduler || groupConfig.schedulerAddress;
     const WALLET = JSON.parse(fs.readFileSync(process.env.PATH_TO_WALLET));
 
     const SIGNER = createSigner(WALLET);
@@ -134,7 +136,7 @@ async function workerRun({
         await runner.test(async () => {
             await spawnLimiter.take();
             const pid = await ao.spawn({
-                module: config[group].aosModule,
+                module: groupConfig.aosModule,
                 tags: [{ name: 'Name', value: `${Date.now()}-${workerIndex}-${i}` }],
             });
             expect(pid).toEqualType('string');
@@ -162,7 +164,7 @@ async function workerRun({
         await runner.test(async () => {
             await spawnLimiter.take();
             const pid = await ao.spawn({
-                module: config[group].aosModule,
+                module: groupConfig.aosModule,
                 tags: [{ name: 'Name', value: `fallback-${Date.now()}-${workerIndex}` }],
             });
             expect(pid).toEqualType('string');
