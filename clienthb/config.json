@@ -1,18 +1,5 @@
 {
-  "local_basic": {
-    "url": "http://localhost:8734",
-    "schedulerAddress": "mYJTM8VpIibDLuyGLQTcbcPy-LeOY48qzECADTUYfWc",
-    "aosModule": "URgYpPQzvxxfYQtjrIQ116bl3YBfcImo3JEnNo8Hlrk",
-    "scripts": [
-      "core-libs.js",
-      "compatibility.js",
-      "message-passing.js",
-      "patch.js",
-      "volume.js"
-    ]
-  },
-  "remote_schedule_basic": {
-    "url": "http://localhost:8734",
+  "defaults": {
     "schedulerAddress": "NoZH3pueH0Cih6zjSNu_KRAcmg4ZJV1aGHKi0Pi5_Hc",
     "aosModule": "URgYpPQzvxxfYQtjrIQ116bl3YBfcImo3JEnNo8Hlrk",
     "scripts": [
@@ -22,5 +9,18 @@
       "patch.js",
       "volume.js"
     ]
+  },
+  "local_basic": {
+    "url": "http://localhost:8734",
+    "schedulerAddress": "mYJTM8VpIibDLuyGLQTcbcPy-LeOY48qzECADTUYfWc"
+  },
+  "remote_schedule_basic": {
+    "url": "http://localhost:8734"
+  },
+  "dev_basic": {
+    "url": "https://dev-router.forward.computer"
+  },
+  "production_basic": {
+    "url": "https://forward.computer"
   }
 }
