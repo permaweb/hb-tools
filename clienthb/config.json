@@ -1,6 +1,17 @@
 {
   "local_basic": {
     "url": "http://localhost:8734",
+    "schedulerAddress": "mYJTM8VpIibDLuyGLQTcbcPy-LeOY48qzECADTUYfWc",
+    "scripts": [
+      "core-libs.js",
+      "compatibility.js",
+      "message-passing.js",
+      "patch.js",
+      "volume.js"
+    ]
+  },
+  "remote_schedule_basic": {
+    "url": "http://localhost:8734",
     "schedulerAddress": "NoZH3pueH0Cih6zjSNu_KRAcmg4ZJV1aGHKi0Pi5_Hc",
     "scripts": [
       "core-libs.js",

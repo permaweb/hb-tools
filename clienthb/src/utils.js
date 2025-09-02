@@ -78,9 +78,9 @@ export function createTestRunner() {
                 console.log(`\x1b[32mAll ${testSuiteName} Passed\x1b[0m`);
             }
             
-            console.log('Summary:');
-            console.log(`   \x1b[32mPassed\x1b[0m: ${passed}`);
-            console.log(`   \x1b[${exitCode === 1 ? '31' : '90'}mFailed\x1b[0m: ${failed}`);
+            console.log(`${testSuiteName} Summary:`);
+            console.log(`\x1b[32mPassed\x1b[0m: ${passed}`);
+            console.log(`\x1b[${exitCode === 1 ? '31' : '90'}mFailed\x1b[0m: ${failed}`);
             
             // Output parseable test counts for run-group.js
             console.log(`TEST_RESULTS: passed=${passed} failed=${failed} total=${passed + failed}`);

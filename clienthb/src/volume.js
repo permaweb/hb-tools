@@ -1,6 +1,5 @@
 import fs from 'fs';
-import { createSigner } from '@permaweb/ao-core-libs';
-import { connect } from '@permaweb/aoconnect';
+import { connect, createSigner } from '@permaweb/aoconnect';
 import { Worker, isMainThread, parentPort, workerData } from 'worker_threads';
 import { performance } from 'perf_hooks';
 
@@ -95,7 +94,7 @@ async function workerRun({
     const runner = createTestRunner();
     log(`Worker ${workerIndex}: Starting initialization`);
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-    if (!config[group]) throw new Error(`Group "${group}" not found in ${configPath}`);
+    if (!config[group]) throw new Error(`Group '${group}' not found in ${configPath}`);
 
     const MAINNET_URL = overrides.url || config[group].url;
     const MAINNET_SCHEDULER = overrides.scheduler || config[group].schedulerAddress;

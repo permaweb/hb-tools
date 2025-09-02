@@ -1,6 +1,5 @@
 import fs from 'fs';
-import { createSigner } from '@permaweb/ao-core-libs';
-import { connect } from '@permaweb/aoconnect';
+import { connect, createSigner } from '@permaweb/aoconnect';
 
 import { parseArgs, expect, createTestRunner } from './utils.js';
 
@@ -9,7 +8,7 @@ const configPath = flags.config || 'config.json';
 const config = JSON.parse(fs.readFileSync(configPath));
 
 if (!config[group]) {
-  throw new Error(`Group "${group}" not found in ${configPath}`);
+  throw new Error(`Group '${group}' not found in ${configPath}`);
 }
 
 const MAINNET_URL = flags.url || config[group].url;
@@ -18,7 +17,7 @@ const WALLET = JSON.parse(fs.readFileSync(process.env.PATH_TO_WALLET));
 const SIGNER = createSigner(WALLET);
 
 function log(...args) {
-    console.log(`\x1b[32m[HB Client Patch]\x1b[0m`, ...args);
+    console.log(`\x1b[36m[HB Client Patch]\x1b[0m`, ...args);
 }
 
 const indexLengths = [1000, 5000, 10_000, 25_000];

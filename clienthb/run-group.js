@@ -14,10 +14,16 @@ const args = process.argv.slice(2);
 if (args.length === 0) {
   console.error('Usage: node run-group.js <group> [additional-args...]');
   console.error('This will run all scripts defined for the group in config.json');
+  console.error('Options:');
+  console.error('  --stop-on-error  Stop execution when a script fails (default: continue)');
   process.exit(1);
 }
 
-const [group, ...additionalArgs] = args;
+// Check for --stop-on-error flag (default is to continue on error)
+const continueOnError = !args.includes('--stop-on-error');
+const filteredArgs = args.filter(arg => arg !== '--stop-on-error');
+
+const [group, ...additionalArgs] = filteredArgs;
 
 // Read config.json
 const configPath = path.join(__dirname, 'config.json');
@@ -32,7 +38,7 @@ try {
 
 // Check if group exists in config
 if (!config[group]) {
-  console.error(`Group "${group}" not found in config.json`);
+  console.error(`Group '${group}' not found in config.json`);
   console.error(`Available groups: ${Object.keys(config).join(', ')}`);
   process.exit(1);
 }
@@ -40,17 +46,19 @@ if (!config[group]) {
 // Get scripts for the group
 const groupConfig = config[group];
 if (!groupConfig.scripts || !Array.isArray(groupConfig.scripts)) {
-  console.error(`Group "${group}" does not have a "scripts" array in config.json`);
+  console.error(`Group '${group}' does not have a 'scripts' array in config.json`);
   process.exit(1);
 }
 
 const scripts = groupConfig.scripts;
 const srcDir = path.join(__dirname, 'src');
 
-console.log(`Running group "${group}" with ${scripts.length} scripts`);
+console.log(`Running group '${group}' with ${scripts.length} scripts`);
 console.log(`Scripts: ${scripts.join(', ')}`);
 console.log(`Arguments: ${group} ${additionalArgs.join(' ')}`);
-console.log('---');
+if (!continueOnError) {
+  console.log(`Mode: Stop on error enabled`);
+}
 
 // Function to run a single script
 function runScript(scriptName) {
@@ -74,7 +82,7 @@ function runScript(scriptName) {
       const output = data.toString();
       stdout += output;
       // Prefix output with script name
-      process.stdout.write(`[${scriptName}] ${output}`);
+      process.stdout.write(`${output}`);
     });
 
     child.stderr.on('data', (data) => {
@@ -134,15 +142,26 @@ async function runScriptsSequentially() {
       }
     } catch (error) {
       results.push({ status: 'rejected', reason: error });
-      console.log(`\x1b[31m[FAILED]\x1b[0m ${scriptName} failed: ${error.error ? error.error.message : `exit code ${error.code}`}`);
       
-      // Stop execution on first failure
-      console.log('\n--- Execution stopped due to failure ---');
-      break;
+      // Parse test results from failed script if available
+      const testResults = parseTestResults(error.stdout || '');
+      if (testResults) {
+        totalTestsPassed += testResults.passed;
+        totalTestsFailed += testResults.failed;
+        console.log(`\x1b[31m[FAILED]\x1b[0m ${scriptName} failed: exit code ${error.code} (${testResults.passed} passed, ${testResults.failed} failed)`);
+      } else {
+        console.log(`\x1b[31m[FAILED]\x1b[0m ${scriptName} failed: ${error.error ? error.error.message : `exit code ${error.code}`}`);
+      }
+      
+      if (!continueOnError) {
+        // Stop execution on first failure
+        console.log('\n--- Execution stopped due to failure ---');
+        break;
+      } else {
+        
+      }
     }
   }
-  
-  console.log('\n--- Summary ---');
   
   const successful = results.filter(r => r.status === 'fulfilled');
   const failed = results.filter(r => r.status === 'rejected');
@@ -151,7 +170,7 @@ async function runScriptsSequentially() {
   
   const totalTests = totalTestsPassed + totalTestsFailed;
   if (totalTests > 0) {
-    console.log(`\nTotal Test Summary:`);
+    console.log(`Total Test Summary:`);
     console.log(`   \x1b[32mPassed\x1b[0m: ${totalTestsPassed}`);
     console.log(`   \x1b[${totalTestsFailed > 0 ? '31' : '90'}mFailed\x1b[0m: ${totalTestsFailed}`);
     console.log(`   Total: ${totalTests}`);
