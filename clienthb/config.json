@@ -2,6 +2,7 @@
   "local_basic": {
     "url": "http://localhost:8734",
     "schedulerAddress": "mYJTM8VpIibDLuyGLQTcbcPy-LeOY48qzECADTUYfWc",
+    "aosModule": "URgYpPQzvxxfYQtjrIQ116bl3YBfcImo3JEnNo8Hlrk",
     "scripts": [
       "core-libs.js",
       "compatibility.js",
@@ -13,6 +14,7 @@
   "remote_schedule_basic": {
     "url": "http://localhost:8734",
     "schedulerAddress": "NoZH3pueH0Cih6zjSNu_KRAcmg4ZJV1aGHKi0Pi5_Hc",
+    "aosModule": "URgYpPQzvxxfYQtjrIQ116bl3YBfcImo3JEnNo8Hlrk",
     "scripts": [
       "core-libs.js",
       "compatibility.js",

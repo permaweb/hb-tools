@@ -12,7 +12,7 @@ function log(...args) {
 }
 
 async function spawnNew(ao, SIGNER) {
-  let spawnArgs = { tags: [{ name: 'Name', value: Date.now().toString() }] };
+  let spawnArgs = { module: config[group].aosModule, tags: [{ name: 'Name', value: Date.now().toString() }] };
 
   const processId = await ao.spawn(spawnArgs);
 
