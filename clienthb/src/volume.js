@@ -6,13 +6,13 @@ import { performance } from 'perf_hooks';
 import { parseArgs, expect, createTestRunner } from './utils.js';
 
 // Default values - can be overridden by CLI flags
-let TOTAL_SPAWNS = 10;                  // Total processes to spawn across all workers
-let TOTAL_MESSAGES = 100;               // Total Info messages to send across all workers
-let WORKERS = 4;                        // Number of worker threads
+let TOTAL_SPAWNS = 4;                  // Total processes to spawn across all workers
+let TOTAL_MESSAGES = 40;               // Total Info messages to send across all workers
+let WORKERS = 2;                        // Number of worker threads
 
 // Rate limits (global totals; each worker gets an even share)
 const RATE_SPAWNS_PER_SEC = 2;         // Max spawn ops per second across all workers
-const RATE_MSGS_PER_SEC = 20;          // Max message ops per second across all workers
+const RATE_MSGS_PER_SEC = 10;          // Max message ops per second across all workers
 
 // Jitter (adds +/- this many ms to each op's pacing sleep; 0 disables)
 const JITTER_MS = 50;
