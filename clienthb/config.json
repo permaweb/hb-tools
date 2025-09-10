@@ -12,13 +12,13 @@
   },
   "local_basic": {
     "url": "http://localhost:8734",
-    "schedulerAddress": "mYJTM8VpIibDLuyGLQTcbcPy-LeOY48qzECADTUYfWc"
+	"schedulerAddress": "mYJTM8VpIibDLuyGLQTcbcPy-LeOY48qzECADTUYfWc"
   },
   "remote_schedule_basic": {
     "url": "http://localhost:8734"
   },
   "dev_basic": {
-    "url": "https://dev-router.forward.computer"
+    "url": "https://workshop.forward.computer"
   },
   "production_basic": {
     "url": "https://forward.computer"

@@ -161,8 +161,7 @@ async function runConnect(mode) {
         modeLog(mode, `Results Messages: ${JSON.stringify(messages, null, 2)}`);
         expect(messages).toEqualLength(2);
     });
-
-    // TODO
+    
     let dryrun;
     await runner.test(async () => {
         dryrun = await ao.dryrun({
