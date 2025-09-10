@@ -1,6 +1,6 @@
 {
   "defaults": {
-    "schedulerAddress": "NoZH3pueH0Cih6zjSNu_KRAcmg4ZJV1aGHKi0Pi5_Hc",
+    "schedulerAddress": "bBUjsNDjKD0b4ZNL1rp14fIiz3-zM84dk3PHRP-8r8Q",
     "aosModule": "URgYpPQzvxxfYQtjrIQ116bl3YBfcImo3JEnNo8Hlrk",
     "scripts": [
       "core-libs.js",
@@ -12,7 +12,7 @@
   },
   "local_basic": {
     "url": "http://localhost:8734",
-	"schedulerAddress": "mYJTM8VpIibDLuyGLQTcbcPy-LeOY48qzECADTUYfWc"
+    "schedulerAddress": "bBUjsNDjKD0b4ZNL1rp14fIiz3-zM84dk3PHRP-8r8Q"
   },
   "remote_schedule_basic": {
     "url": "http://localhost:8734"
