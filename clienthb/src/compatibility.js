@@ -34,7 +34,10 @@ async function runConnect(mode) {
 
     const ao = connect(connectDeps);
 
-    let spawnArgs = { tags: [{ name: 'Name', value: Date.now().toString() }] };
+    let spawnArgs = { tags: [
+        { name: 'Name', value: Date.now().toString() },
+        { name: 'Content-Type', value: 'text/html' } // BREAKS
+    ] };
 
     spawnArgs.module = groupConfig.aosModule;
 
