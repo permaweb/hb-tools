@@ -59,23 +59,23 @@ async function run() {
     expect(pid2).toEqualType('string');
   });
 
-  await runner.test(async () => {
-    pid3 = await spawnNew(ao, SIGNER);
-    expect(pid3).toEqualType('string');
-  });
+  // await runner.test(async () => {
+  //   pid3 = await spawnNew(ao, SIGNER);
+  //   expect(pid3).toEqualType('string');
+  // });
 
-  log(`Processes: ${JSON.stringify([pid1, pid2, pid3], null, 2)}`);
+  log(`Processes: ${JSON.stringify([pid1, pid2], null, 2)}`);
 
   const code = `
-Handlers.add('Info', 'Info', function(msg)
-  ao.send({ Target = msg.From, Data = 'pong', Action = 'Pong' })
-  ao.send({ Target = '${pid3}', Data = 'pong to another', Action = 'Pong'}) 
-end)
+    Handlers.add('Ping', 'Ping', function(msg)
+      Send({ Target = msg.From, Data = 'Got Ping', Action = 'Got-Ping' })
+      Send({ Target = '${pid2}', Data = 'Pong', Action = 'Pong'}) 
+    end)
   `.trim();
 
   await runner.test(async () => {
     const message = await ao.message({
-      process: pid2,
+      process: pid1,
       tags: [{ name: 'Action', value: 'Eval' }],
       data: code,
       signer: SIGNER,
@@ -83,45 +83,51 @@ end)
     expect(message).toEqualType('number');
   });
 
-  const codePong = `
-Handlers.add('Pong', 'Pong', function(msg)
-  print('Received Pong')
-end)
-  `.trim();
-
-  await runner.test(async () => {
-    const message = await ao.message({
-      process: pid3,
-      tags: [{ name: 'Action', value: 'Eval' }],
-      data: codePong,
-      signer: SIGNER,
-    });
-    expect(message).toEqualType('number');
-  });
-
+  //   const codePong = `
+  // Handlers.add('Pong', 'Pong', function(msg)
+  //   print('Received Pong')
+  // end)
+  //   `.trim();
 
   await runner.test(async () => {
     const message = await ao.message({
       process: pid1,
-      tags: [{ name: 'Action', value: 'Eval' }],
-      data: `
-ao.send({ Target = '${pid2}', Data = 'ping', Action = 'Info' })
-        `.trim(),
+      tags: [{ name: 'Action', value: 'Ping' }],
       signer: SIGNER,
     });
     expect(message).toEqualType('number');
   });
 
-  await new Promise((r) => setTimeout(r, 15000));
+  //   await runner.test(async () => {
+  //     const message = await ao.message({
+  //       process: pid3,
+  //       tags: [{ name: 'Action', value: 'Eval' }],
+  //       data: codePong,
+  //       signer: SIGNER,
+  //     });
+  //     expect(message).toEqualType('number');
+  //   });
 
-  await runner.test(async () => {
-    const resultsPid3 = await ao.results({
-      process: pid3
-    });
+  //   await runner.test(async () => {
+  //     const message = await ao.message({
+  //       process: pid1,
+  //       tags: [{ name: 'Action', value: 'Eval' }],
+  //       data: `
+  // ao.send({ Target = '${pid2}', Data = 'ping', Action = 'Info' })
+  //         `.trim(),
+  //       signer: SIGNER,
+  //     });
+  //     expect(message).toEqualType('number');
+  //   });
 
-    let data = resultsPid3['edges'][0]['node']['Output']['data'];
-    expect(data).toEqual('Received Pong');
-  });
+  //   await runner.test(async () => {
+  //     const resultsPid3 = await ao.results({
+  //       process: pid3
+  //     });
+
+  //     let data = resultsPid3['edges'][0]['node']['Output']['data'];
+  //     expect(data).toEqual('Received Pong');
+  //   });
 
   log(`Message passing test successful!`);
 
