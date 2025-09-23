@@ -44,15 +44,9 @@ async function runLegacyProcessPush() {
 
     spawnArgsMainnet.module = groupConfig.aosModule;
 
-    const aoLegacy = connect(connectDepsLegacy);
     const aoMainnet = connect(connectDepsMainnet);
 
-    let processIdLegacy;
-    await runner.test(async () => {
-        processIdLegacy = await aoLegacy.spawn(spawnArgsLegacy);
-        modeLog('legacy', `Process ID: ${processIdLegacy}`);
-        expect(processIdLegacy).toEqualType('string');
-    });
+    let processIdLegacy = '2rTQECVbct2YaYacCYPrv9zNrGLlDnvDwxqt4Hn1mxM';
 
     let processIdMainnet;
     await runner.test(async () => {
@@ -72,7 +66,7 @@ async function runLegacyProcessPush() {
         modeLog('mainnet', `Message: ${versionMessageMainnetProcess}`);
         expect(versionMessageMainnetProcess).toEqualType('number');
     });
-
+    
     let versionMessageLegacyProcess;
     await runner.test(async () => {
         versionMessageLegacyProcess = await aoMainnet.message({

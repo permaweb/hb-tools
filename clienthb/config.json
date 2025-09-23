@@ -5,6 +5,7 @@
     "scripts": [
       "core-libs.js",
       "compatibility.js",
+      "legacy-push.js",
       "message-passing.js",
       "patch.js",
       "volume.js"
