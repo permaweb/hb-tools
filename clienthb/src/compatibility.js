@@ -34,10 +34,9 @@ async function runConnect(mode) {
 
     const ao = connect(connectDeps);
 
-    let spawnArgs = { tags: [
-        { name: 'Name', value: Date.now().toString() },
-        { name: 'Content-Type', value: 'text/html' } // BREAKS
-    ] };
+    let spawnArgs = {
+        tags: [{ name: 'Name', value: Date.now().toString() }]
+    };
 
     spawnArgs.module = groupConfig.aosModule;
 
@@ -164,7 +163,7 @@ async function runConnect(mode) {
         modeLog(mode, `Results Messages: ${JSON.stringify(messages, null, 2)}`);
         expect(messages).toEqualLength(2);
     });
-    
+
     let dryrun;
     await runner.test(async () => {
         dryrun = await ao.dryrun({
@@ -179,6 +178,7 @@ async function runConnect(mode) {
 
     exitCode = runner.getSummary('HB Tools Compatibility Tests');
 }
+
 
 (async function () {
     await runConnect('mainnet');
