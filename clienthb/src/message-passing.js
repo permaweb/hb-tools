@@ -14,7 +14,15 @@ function log(...args) {
 }
 
 async function spawnNew(ao, SIGNER) {
-  let spawnArgs = { module: groupConfig.aosModule, tags: [{ name: 'Name', value: Date.now().toString() }] };
+  const MAINNET_SCHEDULER = flags.scheduler || groupConfig.schedulerAddress;
+
+  let spawnArgs = {
+    module: groupConfig.aosModule,
+    tags: [
+      { name: 'Authority', value: MAINNET_SCHEDULER },
+      { name: 'Name', value: Date.now().toString() }
+    ]
+  };
 
   const processId = await ao.spawn(spawnArgs);
 
@@ -66,28 +74,38 @@ async function run() {
 
   log(`Processes: ${JSON.stringify([pid1, pid2], null, 2)}`);
 
-  const code = `
+  const ping = `
     Handlers.add('Ping', 'Ping', function(msg)
       Send({ Target = msg.From, Data = 'Got Ping', Action = 'Got-Ping' })
       Send({ Target = '${pid2}', Data = 'Pong', Action = 'Pong'}) 
     end)
   `.trim();
 
+  const pong = `
+  Handlers.add('Pong', 'Pong', function(msg)
+    print('Received Pong')
+  end)
+    `.trim();
+
   await runner.test(async () => {
     const message = await ao.message({
       process: pid1,
       tags: [{ name: 'Action', value: 'Eval' }],
-      data: code,
+      data: ping,
       signer: SIGNER,
     });
     expect(message).toEqualType('number');
   });
 
-  //   const codePong = `
-  // Handlers.add('Pong', 'Pong', function(msg)
-  //   print('Received Pong')
-  // end)
-  //   `.trim();
+  await runner.test(async () => {
+    const message = await ao.message({
+      process: pid2,
+      tags: [{ name: 'Action', value: 'Eval' }],
+      data: pong,
+      signer: SIGNER,
+    });
+    expect(message).toEqualType('number');
+  });
 
   await runner.test(async () => {
     const message = await ao.message({
@@ -97,16 +115,6 @@ async function run() {
     });
     expect(message).toEqualType('number');
   });
-
-  //   await runner.test(async () => {
-  //     const message = await ao.message({
-  //       process: pid3,
-  //       tags: [{ name: 'Action', value: 'Eval' }],
-  //       data: codePong,
-  //       signer: SIGNER,
-  //     });
-  //     expect(message).toEqualType('number');
-  //   });
 
   //   await runner.test(async () => {
   //     const message = await ao.message({
