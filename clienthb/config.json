@@ -1,7 +1,7 @@
 {
   "defaults": {
-    "schedulerAddress": "bBUjsNDjKD0b4ZNL1rp14fIiz3-zM84dk3PHRP-8r8Q",
-    "aosModule": "URgYpPQzvxxfYQtjrIQ116bl3YBfcImo3JEnNo8Hlrk",
+    "schedulerAddress": "NoZH3pueH0Cih6zjSNu_KRAcmg4ZJV1aGHKi0Pi5_Hc",
+    "aosModule": "ISShJH1ij-hPPt9St5UFFr_8Ys3Kj5cyg7zrMGt7H9s",
     "scripts": [
       "core-libs.js",
       "compatibility.js",
