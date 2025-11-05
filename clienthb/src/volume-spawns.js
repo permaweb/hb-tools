@@ -6,7 +6,7 @@ import { performance } from 'perf_hooks';
 import { parseArgs, expect, createTestRunner } from './utils.js';
 
 // Default values - can be overridden by CLI flags
-let TOTAL_SPAWNS = 2;                  // Total processes to spawn across all workers
+let TOTAL_SPAWNS = 20;                  // Total processes to spawn across all workers
 let TOTAL_MESSAGES = 10;               // Total Info messages to send across all workers
 let WORKERS = 1;                        // Number of worker threads
 

@@ -8,7 +8,7 @@ const configPath = flags.config || 'config.json';
 const config = JSON.parse(fs.readFileSync(configPath));
 
 if (!config[group]) {
-  throw new Error(`Group '${group}' not found in ${configPath}`);
+    throw new Error(`Group '${group}' not found in ${configPath}`);
 }
 
 const groupConfig = { ...config.defaults, ...config[group] };
@@ -33,91 +33,53 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
         signer: SIGNER
     });
 
-    for (const length of indexLengths) {
-        log(`Index Length: ${length}`);
-
-        let processId;
-        await runner.test(async () => {
-            processId = await ao.spawn({
-                module: groupConfig.aosModule,
-                tags: [{ name: 'Name', value: new Date().getTime().toString() }],
-            });
-            expect(processId).toEqualType('string');
-            log(`Process ID: ${processId}`);
+    let processId;
+    await runner.test(async () => {
+        processId = await ao.spawn({
+            module: groupConfig.aosModule,
+            tags: [{ name: 'Name', value: new Date().getTime().toString() }],
         });
+        expect(processId).toEqualType('string');
+        log(`Process ID: ${processId}`);
+    });
 
-        await runner.test(async () => {
-            const handlerAddMessage = await ao.message({
-                process: processId,
-                tags: [{ name: 'Action', value: 'Eval' }],
-                data: `
-            local json = require('json')
-            Index = Index or {}
-            Handlers.add('Set-Index', 'Set-Index', function(msg)
-                Index = json.decode(msg.Data)
-                Send({ device = 'patch@1.0', zone = json.encode(Index) })
-            end)
+    await runner.test(async () => {
+        const patchMessage = await ao.message({
+            process: processId,
+            tags: [{ name: 'Action', value: 'Eval' }],
+            data: `
+            Index = { 1, 2, 3, 4, 5 }
+            Send({ device = 'patch@1.0', zone = Index })
+            Index = { 1 }
+            Send({ device = 'patch@1.0', zone = Index })
+            Index = { 1, 2, 3 }
+            Send({ device = 'patch@1.0', zone = Index })
+            Index = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }
+            Send({ device = 'patch@1.0', zone = Index })
                 `,
-                signer: SIGNER,
-            });
-            expect(handlerAddMessage).toEqualType('number');
-            log(`Added Handlers | Message: ${handlerAddMessage}`);
+            signer: SIGNER,
         });
+        expect(patchMessage).toEqualType('number');
+        log(`Patch | Message: ${patchMessage}`);
+    });
 
-        const data = JSON.stringify({
-            Index: Array.from({ length: length }, (_, i) => ({
-                Id: i,
-                Data: 'x'.repeat(100),
-                DateCreated: new Date().getTime().toString()
-            }))
-        });
+    await runner.test(async () => {
+        const t0Fetch = performance.now();
 
-        const t0Send = performance.now();
+        const response = await fetch(`${MAINNET_URL}/${processId}/now/zone?require-codec=application/json&accept-bundle=true`);
+        const json = await response.json();
+        const data = json.body;
 
-        log(`Setting Index...`);
+        expect(response.ok).toEqual(true);
+        expect(data.length).toEqual(10);
 
-        await runner.test(async () => {
-            const setIndexMessage = await ao.message({
-                process: processId,
-                tags: [{ name: 'Action', value: 'Set-Index' }],
-                data: data,
-                signer: SIGNER,
-            });
-            expect(setIndexMessage).toEqualType('number');
-            log(`Set Index | Message: ${setIndexMessage}`);
+        const t1Fetch = performance.now();
 
-            const t1Send = performance.now();
+        const durationMsFetch = Math.round(t1Fetch - t0Fetch);
+        const durationSecFetch = (durationMsFetch / 1000).toFixed(2);
 
-            const durationMsSend = Math.round(t1Send - t0Send);
-            const durationSecSend = (durationMsSend / 1000).toFixed(2);
-
-            log(`Message Send: ${durationMsSend}ms (${durationSecSend}s)`);
-        });
-
-        await runner.test(async () => {
-            const t0Fetch = performance.now();
-
-            const response = await fetch(`${MAINNET_URL}/${processId}/now/zone`);
-            expect(response.ok).toEqual(true);
-
-            const t1Fetch = performance.now();
-
-            const buf = Buffer.from(await response.arrayBuffer());
-
-            const sizeBytes = buf.length;
-            const sizeMB = (sizeBytes / (1024 * 1024)).toFixed(2);
-            const sizeGB = (sizeBytes / (1024 * 1024 * 1024)).toFixed(2);
-
-            log(`Raw size: ${sizeBytes} bytes (${sizeMB} MB, ${sizeGB} GB)`);
-
-            const durationMsFetch = Math.round(t1Fetch - t0Fetch);
-            const durationSecFetch = (durationMsFetch / 1000).toFixed(2);
-
-            log(`Fetch: ${durationMsFetch}ms (${durationSecFetch}s)`);
-        });
-
-        if (length !== indexLengths[indexLengths.length - 1]) console.log('-'.repeat(75));
-    }
+        log(`Fetch: ${durationMsFetch}ms (${durationSecFetch}s)`);
+    });
 
     const exitCode = runner.getSummary('Patch Tests');
     process.exit(exitCode);
