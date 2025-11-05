@@ -47,36 +47,43 @@ async function runConnect(mode) {
 
     let processId;
     await runner.test(async () => {
+        const start = Date.now();
         processId = await ao.spawn(spawnArgs);
-        modeLog(mode, `Process ID: ${processId}`);
+        const duration = ((Date.now() - start) / 1000).toFixed(2);
+        modeLog(mode, `Process ID: ${processId} (${duration}s)`);
         expect(processId).toEqualType('string');
     });
 
     let versionMessage;
     await runner.test(async () => {
+        const start = Date.now();
         versionMessage = await ao.message({
             process: processId,
             tags: [{ name: 'Action', value: 'Eval' }],
             data: `require('.process')._version`,
             signer: SIGNER
         });
-        modeLog(mode, `Message: ${versionMessage}`);
+        const duration = ((Date.now() - start) / 1000).toFixed(2);
+        modeLog(mode, `Message: ${versionMessage} (${duration}s)`);
         expect(versionMessage).toEqualType('number');
     });
 
     let versionResult;
     await runner.test(async () => {
+        const start = Date.now();
         versionResult = await ao.result({
             process: processId,
             message: versionMessage
         });
+        const duration = ((Date.now() - start) / 1000).toFixed(2);
         const data = versionResult.Output?.data;
-        modeLog(mode, `Result Data: ${data}`);
+        modeLog(mode, `Result Data: ${data} (${duration}s)`);
         expect(data).toEqualType('string');
     });
 
     let handlerAddMessage;
     await runner.test(async () => {
+        const start = Date.now();
         handlerAddMessage = await ao.message({
             process: processId,
             tags: [{ name: 'Action', value: 'Eval' }],
@@ -94,78 +101,92 @@ async function runConnect(mode) {
             `,
             signer: SIGNER,
         });
-        modeLog(mode, `Added Handlers | Message: ${handlerAddMessage}`);
+        const duration = ((Date.now() - start) / 1000).toFixed(2);
+        modeLog(mode, `Added Handlers | Message: ${handlerAddMessage} (${duration}s)`);
         expect(handlerAddMessage).toEqualType('number');
     });
 
     let handlerAddResult;
     await runner.test(async () => {
+        const start = Date.now();
         handlerAddResult = await ao.result({
             process: processId,
             message: handlerAddMessage
         });
+        const duration = ((Date.now() - start) / 1000).toFixed(2);
         const data = handlerAddResult.Output?.data;
-        modeLog(mode, `Result Data: ${data}`);
+        modeLog(mode, `Result Data: ${data} (${duration}s)`);
         expect(data).toEqualType('string');
     });
 
     let handlerReadMessage;
     await runner.test(async () => {
+        const start = Date.now();
         handlerReadMessage = await ao.message({
             process: processId,
             tags: [{ name: 'Action', value: 'Eval' }],
             data: `Handlers.list`,
             signer: SIGNER,
         });
-        modeLog(mode, `Read Handlers | Message: ${handlerReadMessage}`);
+        const duration = ((Date.now() - start) / 1000).toFixed(2);
+        modeLog(mode, `Read Handlers | Message: ${handlerReadMessage} (${duration}s)`);
         expect(handlerReadMessage).toEqualType('number');
     });
 
     let handlerReadResult;
     await runner.test(async () => {
+        const start = Date.now();
         handlerReadResult = await ao.result({
             process: processId,
             message: handlerReadMessage
         });
+        const duration = ((Date.now() - start) / 1000).toFixed(2);
         const data = handlerReadResult.Output?.data;
-        modeLog(mode, `Result Data: ${data}`);
+        modeLog(mode, `Result Data: ${data} (${duration}s)`);
         expect(data).toEqualType('string');
     });
 
     let infoMessage;
     await runner.test(async () => {
+        const start = Date.now();
         infoMessage = await ao.message({
             process: processId,
             tags: [{ name: 'Action', value: 'Info' }],
             signer: SIGNER
         });
-        modeLog(mode, `Action: Info | Message: ${infoMessage}`);
+        const duration = ((Date.now() - start) / 1000).toFixed(2);
+        modeLog(mode, `Action: Info | Message: ${infoMessage} (${duration}s)`);
         expect(infoMessage).toEqualType('number');
     });
 
     let infoResult;
     await runner.test(async () => {
+        const start = Date.now();
         infoResult = await ao.result({
             process: processId,
             message: infoMessage
         });
+        const duration = ((Date.now() - start) / 1000).toFixed(2);
         const messages = infoResult?.Messages;
-        modeLog(mode, `Info Result Messages: ${JSON.stringify(messages, null, 2)}`);
+        modeLog(mode, `Info Result Messages: ${JSON.stringify(messages, null, 2)} (${duration}s)`);
         expect(messages).toEqualLength(2);
     });
 
     let results;
     await runner.test(async () => {
+        const start = Date.now();
         results = await ao.results({
             process: processId
         });
+        const duration = ((Date.now() - start) / 1000).toFixed(2);
         const messages = results?.edges?.[0].node?.Messages;
-        modeLog(mode, `Results Messages: ${JSON.stringify(messages, null, 2)}`);
+        modeLog(mode, `Results Messages: ${JSON.stringify(messages, null, 2)} (${duration}s)`);
         expect(messages).toEqualLength(2);
     });
 
     let dryrun;
     await runner.test(async () => {
+        const start = Date.now();
         dryrun = await ao.dryrun({
             process: processId,
             tags: [
@@ -173,7 +194,8 @@ async function runConnect(mode) {
                 { name: 'Test', value: 'Dryrun' }
             ]
         });
-        modeLog(mode, `Dryrun | Result: ${JSON.stringify(dryrun, null, 2)}`);
+        const duration = ((Date.now() - start) / 1000).toFixed(2);
+        modeLog(mode, `Dryrun | Result: ${JSON.stringify(dryrun, null, 2)} (${duration}s)`);
     });
 
     exitCode = runner.getSummary('HB Tools Compatibility Tests');
@@ -181,6 +203,10 @@ async function runConnect(mode) {
 
 
 (async function () {
+    const startTime = Date.now();
     await runConnect('mainnet');
+    const endTime = Date.now();
+    const durationSeconds = ((endTime - startTime) / 1000).toFixed(2);
+    console.log(`\n\x1b[1mTotal test duration: ${durationSeconds} seconds\x1b[0m`);
     process.exit(exitCode);
 })();

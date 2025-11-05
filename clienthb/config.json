@@ -3,12 +3,13 @@
     "schedulerAddress": "NoZH3pueH0Cih6zjSNu_KRAcmg4ZJV1aGHKi0Pi5_Hc",
     "aosModule": "ISShJH1ij-hPPt9St5UFFr_8Ys3Kj5cyg7zrMGt7H9s",
     "scripts": [
-      "core-libs.js",
       "compatibility.js",
+      "core-libs.js",
       "legacy-push.js",
       "message-passing.js",
       "patch.js",
-      "volume.js"
+      "volume-patch.js",
+      "volume-spawns.js"
     ]
   },
   "local_basic": {
@@ -23,5 +24,16 @@
   },
   "production_basic": {
     "url": "https://forward.computer"
+  },
+  "portal_basic": {
+    "url": "https://hb.portalinto.com",
+    "schedulerAddress": "a5ZMUKbGClAsKzB4SHDYrwkOZZHIIfpbaxrmKwUHCe8"
+  },
+  "push_1": {
+    "url": "https://push-1.forward.computer"
+  },
+  "app_1": {
+    "url": "https://app-1.forward.computer",
+    "schedulerAddress": "0-rM_Ljbv7eNvk93vUtZKlKqSjdxFX_MIq7722EXvnw"
   }
 }
