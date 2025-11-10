@@ -14,8 +14,7 @@
 		"test:coverage": "CI=true npm test -- --env=jsdom --coverage",
 		"build": "NODE_ENV=production vite build",
 		"deploy:main": "npm run build && permaweb-deploy --arns-name lunar",
-		"deploy:staging": "npm run build && permaweb-deploy --arns-name lunar --undername staging",
-		"prepare": "husky install"
+		"deploy:staging": "npm run build && permaweb-deploy --arns-name lunar --undername staging"
 	},
 	"dependencies": {
 		"@hello-pangea/dnd": "^17.0.0",
