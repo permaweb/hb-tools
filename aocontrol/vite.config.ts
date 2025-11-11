@@ -61,5 +61,11 @@ export default defineConfig({
 		open: false,
 		strictPort: true,
 		hmr: true,
+		proxy: {
+			'/api': {
+				target: 'http://localhost:3001',
+				changeOrigin: true,
+			},
+		},
 	},
 });
