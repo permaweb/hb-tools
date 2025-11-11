@@ -35,15 +35,18 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
 
     let processId;
     await runner.test(async () => {
+        const start = Date.now();
         processId = await ao.spawn({
             module: groupConfig.aosModule,
             tags: [{ name: 'Name', value: new Date().getTime().toString() }],
         });
+        const duration = ((Date.now() - start) / 1000).toFixed(2);
         expect(processId).toEqualType('string');
-        log(`Process ID: ${processId}`);
+        log(`Process ID: ${processId} (${duration}s)`);
     });
 
     await runner.test(async () => {
+        const start = Date.now();
         const patchMessage = await ao.message({
             process: processId,
             tags: [{ name: 'Action', value: 'Eval' }],
@@ -59,8 +62,9 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
                 `,
             signer: SIGNER,
         });
+        const duration = ((Date.now() - start) / 1000).toFixed(2);
         expect(patchMessage).toEqualType('number');
-        log(`Patch | Message: ${patchMessage}`);
+        log(`Patch | Message: ${patchMessage} (${duration}s)`);
     });
 
     await runner.test(async () => {
