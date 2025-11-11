@@ -35,11 +35,14 @@ async function runConnect(mode) {
     const ao = connect(connectDeps);
 
     let spawnArgs = {
-        tags: [{ name: 'Name', value: Date.now().toString() }]
+        tags: [{ name: 'Name', value: Date.now().toString() }],
+        tags: [{ name: 'Scheduler', value: MAINNET_SCHEDULER }],
+        tags: [{ name: 'Module', value: groupConfig.aosModule }],
     };
 
     spawnArgs.module = groupConfig.aosModule;
 
+    spawnArgs.scheduler = '_GQ33BkPtZrqxA84vM8Zk-N2aO0toNNu_C-l-rawrBA';
     if (!useMainnet) {
         spawnArgs.scheduler = '_GQ33BkPtZrqxA84vM8Zk-N2aO0toNNu_C-l-rawrBA';
         spawnArgs.signer = SIGNER;
