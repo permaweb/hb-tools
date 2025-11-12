@@ -47,4 +47,6 @@ curl -X POST http://localhost:3001/api/hydrate \
 curl "http://localhost:3001/api/processes?pids=wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0"
 
 curl http://localhost:3001/api/summary
+
+curl -X POST http://localhost:3001/api/clean-bad-procs
 ```

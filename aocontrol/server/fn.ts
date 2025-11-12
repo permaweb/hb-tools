@@ -74,9 +74,11 @@ const startHydration = async ({ id, url, db }: { id: string, url: string, db: Sq
                 const newStatus = await checkStatus({ id, url })
                 await db.saveHydration(id, url, newStatus)
             }
-        }) .catch(async (e) => {
-                const newStatus = await checkStatus({ id, url })
-                await db.saveHydration(id, url, newStatus)
+            return res
+        }).catch(async (e) => {
+            const newStatus = await checkStatus({ id, url })
+            await db.saveHydration(id, url, newStatus)
+            return null
         })
 }
 
@@ -227,6 +229,23 @@ export const cleanBadProcsWith = ({ db }: Deps) => {
             totalProcesses: allProcessIds.length,
             deletedProcesses: processesToDelete.length,
             deletedIds: processesToDelete
+        }
+    }
+}
+
+// go through the NOPROGRESS pids 1 by 1
+export const rollingHydrationWith = ({ db }: Deps) => {
+    return async () => {
+        const allProcessIds = await db.getAllProcessIds()
+
+        for (const processId of allProcessIds) {
+            const hydrations = await db.getHydrationsByProcessId(processId)
+
+            for (const hydration of hydrations) {
+                if(hydration.status === 'NOPROGRESS') {
+                    await startHydration({ id: processId, url: hydration.url, db })
+                }
+            }
         }
     }
 }

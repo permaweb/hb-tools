@@ -1,7 +1,15 @@
 import 'dotenv/config'
 import { readFileSync } from 'fs'
 import { createSqliteClient } from './db.js'
-import { loadProcessesWith, hydrateWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith } from './fn.js'
+import { 
+  loadProcessesWith, 
+  hydrateWith, 
+  refreshStatusWith, 
+  readProcessesWith, 
+  summaryWith, 
+  cleanBadProcsWith,
+  rollingHydrationWith
+} from './fn.js'
 
 function parseArgs() {
   const args = process.argv.slice(2)
@@ -39,6 +47,7 @@ async function main() {
   const readProcesses = readProcessesWith({ db })
   const summary = summaryWith({ db })
   const cleanBadProcs = cleanBadProcsWith({ db })
+  const rollingHydration = rollingHydrationWith({ db })
 
   if (action === 'load') {
     const filePath = args.file
