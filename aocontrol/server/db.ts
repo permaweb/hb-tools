@@ -28,6 +28,7 @@ export interface SqliteClient {
   getAllProcessIds: () => Promise<string[]>
   getHydrationsByProcessId: (processId: string) => Promise<Hydration[]>
   getStatusCounts: () => Promise<Record<string, number>>
+  deleteProcess: (processId: string) => Promise<Database.RunResult>
   db: SqliteDatabase
 }
 
@@ -103,6 +104,9 @@ export async function createSqliteClient ({ url }: SqliteClientConfig): Promise<
         acc[status] = count
         return acc
       }, {} as Record<string, number>)
+    },
+    deleteProcess: async (processId: string) => {
+      return db.prepare('DELETE FROM processes WHERE processId = ?').run(processId)
     },
     db
   }

@@ -193,3 +193,40 @@ export const summaryWith = ({ db }: Deps) => {
         }
     }
 }
+
+export const cleanBadProcsWith = ({ db }: Deps) => {
+    return async () => {
+        const allProcessIds = await db.getAllProcessIds()
+        const processesToDelete: string[] = []
+
+        for (const processId of allProcessIds) {
+            const hydrations = await db.getHydrationsByProcessId(processId)
+
+            const hasNonHydratedStatus = hydrations.some(h => h.status !== 'HYDRATED')
+
+            if (hasNonHydratedStatus) {
+                try {
+                    const nonce = await hydrator.fetchTokenInfo(processId)
+                        .then((res) => res.nonce)
+
+                    if (nonce <= 1) {
+                        console.log(`marking for deletion: ${processId}`)
+                        processesToDelete.push(processId)
+                    }
+                } catch (e: any) {
+                    continue
+                }
+            }
+        }
+
+        for (const processId of processesToDelete) {
+            await db.deleteProcess(processId)
+        }
+
+        return {
+            totalProcesses: allProcessIds.length,
+            deletedProcesses: processesToDelete.length,
+            deletedIds: processesToDelete
+        }
+    }
+}

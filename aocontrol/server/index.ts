@@ -4,7 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createSqliteClient } from './db.js'
-import { loadProcessesWith, hydrateWith, refreshStatusWith, readProcessesWith, summaryWith } from './fn.js'
+import { loadProcessesWith, hydrateWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith } from './fn.js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,6 +29,7 @@ async function startServer() {
   const refreshStatus = refreshStatusWith({ db })
   const readProcesses = readProcessesWith({ db })
   const summary = summaryWith({ db })
+  const cleanBadProcs = cleanBadProcsWith({ db })
 
   app.post('/api/load', async (req, res) => {
   try {
@@ -115,6 +116,16 @@ app.get('/api/processes', async (req, res) => {
       res.json(result)
     } catch (error) {
       console.error('Error getting summary:', error)
+      res.status(500).json({ error: (error as Error).message })
+    }
+  })
+
+  app.post('/api/clean-bad-procs', async (_req, res) => {
+    try {
+      const result = await cleanBadProcs()
+      res.json(result)
+    } catch (error) {
+      console.error('Error cleaning bad processes:', error)
       res.status(500).json({ error: (error as Error).message })
     }
   })

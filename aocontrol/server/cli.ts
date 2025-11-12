@@ -1,7 +1,7 @@
 import 'dotenv/config'
 import { readFileSync } from 'fs'
 import { createSqliteClient } from './db.js'
-import { loadProcessesWith, hydrateWith, refreshStatusWith, readProcessesWith, summaryWith } from './fn.js'
+import { loadProcessesWith, hydrateWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith } from './fn.js'
 
 function parseArgs() {
   const args = process.argv.slice(2)
@@ -38,6 +38,7 @@ async function main() {
   const refreshStatus = refreshStatusWith({ db })
   const readProcesses = readProcessesWith({ db })
   const summary = summaryWith({ db })
+  const cleanBadProcs = cleanBadProcsWith({ db })
 
   if (action === 'load') {
     const filePath = args.file
@@ -85,6 +86,9 @@ async function main() {
     console.log(JSON.stringify(result, null, 2))
   } else if (action === 'summary') {
     const result = await summary()
+    console.log(JSON.stringify(result, null, 2))
+  } else if (action === 'clean-bad-procs') {
+    const result = await cleanBadProcs()
     console.log(JSON.stringify(result, null, 2))
   } else if (action) {
     throw new Error(`Unknown action: ${action}`)
