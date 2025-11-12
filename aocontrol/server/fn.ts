@@ -2,9 +2,30 @@ import { SqliteClient, Hydration } from './db.js'
 import { TokenHydrator } from './hydrator/hydrator.js'
 import { ErrorHandler } from './hydrator/errors.js'
 import { Logger } from './hydrator/logger.js'
+import { randomBytes } from 'crypto'
 
 type Deps = {
     db: SqliteClient
+}
+
+// Track active rolling hydration operations
+const activeOperations = new Map<string, { aborted: boolean }>()
+
+export function generateOperationId(): string {
+    return randomBytes(16).toString('hex')
+}
+
+export function stopOperation(operationId: string): boolean {
+    const operation = activeOperations.get(operationId)
+    if (operation) {
+        operation.aborted = true
+        return true
+    }
+    return false
+}
+
+export function getActiveOperations(): string[] {
+    return Array.from(activeOperations.keys())
 }
 
 type Processes = {
@@ -233,19 +254,87 @@ export const cleanBadProcsWith = ({ db }: Deps) => {
     }
 }
 
-// go through the NOPROGRESS pids 1 by 1
+// this will run MAX_CONCURRENT hydrations at once, it will
+// start them if they have a NOPROGRESS status
 export const rollingHydrationWith = ({ db }: Deps) => {
-    return async () => {
-        const allProcessIds = await db.getAllProcessIds()
+    return async (operationId?: string) => {
+        const opId = operationId || generateOperationId()
 
-        for (const processId of allProcessIds) {
-            const hydrations = await db.getHydrationsByProcessId(processId)
+        activeOperations.set(opId, { aborted: false })
 
-            for (const hydration of hydrations) {
-                if(hydration.status === 'NOPROGRESS') {
-                    await startHydration({ id: processId, url: hydration.url, db })
+        try {
+            const allProcessIds = await db.getAllProcessIds()
+            const runningPromises = new Set<Promise<void>>()
+            const MAX_CONCURRENT = 20
+
+            const queueHydration = async (processId: string, url: string) => {
+                while (runningPromises.size >= MAX_CONCURRENT) {
+                    const op = activeOperations.get(opId)
+                    if (op?.aborted) {
+                        return
+                    }
+
+                    if (runningPromises.size > 0) {
+                        await Promise.race(runningPromises)
+                    }
+                }
+
+                const op = activeOperations.get(opId)
+                if (op?.aborted) {
+                    return
+                }
+
+                const promise = startHydration({ id: processId, url, db })
+                    .then(() => {
+                        runningPromises.delete(promise)
+                        console.log(`Hydration completed for ${processId}. Queue size: ${runningPromises.size}/${MAX_CONCURRENT}`)
+                    })
+                    .catch((err) => {
+                        console.error(`Hydration error for ${processId}:`, err)
+                        runningPromises.delete(promise)
+                        console.log(`Queue size after error: ${runningPromises.size}/${MAX_CONCURRENT}`)
+                    })
+
+                runningPromises.add(promise)
+                console.log(`Started hydration for ${processId}. Queue size: ${runningPromises.size}/${MAX_CONCURRENT}`)
+            }
+
+            for (const processId of allProcessIds) {
+                const operation = activeOperations.get(opId)
+                if (operation?.aborted) {
+                    console.log(`Rolling hydration ${opId} was stopped`)
+                    break
+                }
+
+                const hydrations = await db.getHydrationsByProcessId(processId)
+
+                for (const hydration of hydrations) {
+                    const op = activeOperations.get(opId)
+                    if (op?.aborted) {
+                        console.log(`Rolling hydration ${opId} was stopped`)
+                        break
+                    }
+
+                    if (hydration.status === 'NOPROGRESS') {
+                        await queueHydration(processId, hydration.url)
+                    }
+                }
+
+                const op = activeOperations.get(opId)
+                if (op?.aborted) {
+                    break
                 }
             }
+
+            if (runningPromises.size > 0) {
+                console.log(`Waiting for ${runningPromises.size} remaining hydrations to complete...`)
+                await Promise.all(runningPromises)
+            }
+
+        } finally {
+            activeOperations.delete(opId)
         }
+
+        return opId
     }
 }
