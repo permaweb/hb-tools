@@ -49,4 +49,10 @@ curl "http://localhost:3001/api/processes?pids=wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJ
 curl http://localhost:3001/api/summary
 
 curl -X POST http://localhost:3001/api/clean-bad-procs
+
+curl -s -X POST http://localhost:3001/api/rolling-hydration
+
+curl -X POST http://localhost:3001/api/stop-rolling-hydration \
+    -H "Content-Type: application/json" \
+    -d "{\"operationId\": \"$OPERATION_ID\"}"
 ```

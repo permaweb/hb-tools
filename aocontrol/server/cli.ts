@@ -1,14 +1,16 @@
 import 'dotenv/config'
 import { readFileSync } from 'fs'
 import { createSqliteClient } from './db.js'
-import { 
-  loadProcessesWith, 
-  hydrateWith, 
-  refreshStatusWith, 
-  readProcessesWith, 
-  summaryWith, 
+import {
+  loadProcessesWith,
+  hydrateWith,
+  refreshStatusWith,
+  readProcessesWith,
+  summaryWith,
   cleanBadProcsWith,
-  rollingHydrationWith
+  rollingHydrationWith,
+  stopOperation,
+  getActiveOperations
 } from './fn.js'
 
 function parseArgs() {
@@ -99,6 +101,19 @@ async function main() {
   } else if (action === 'clean-bad-procs') {
     const result = await cleanBadProcs()
     console.log(JSON.stringify(result, null, 2))
+  } else if (action === 'rolling-hydration') {
+    const operationId = await rollingHydration()
+    console.log(JSON.stringify({ operationId, message: 'Rolling hydration completed' }, null, 2))
+  } else if (action === 'stop-rolling-hydration') {
+    const operationId = args.id
+    if (!operationId) {
+      throw new Error('--id argument is required for stop-rolling-hydration action')
+    }
+    const stopped = stopOperation(operationId)
+    console.log(JSON.stringify({ success: stopped, operationId, message: stopped ? 'Operation stopped' : 'Operation not found' }, null, 2))
+  } else if (action === 'list-operations') {
+    const operations = getActiveOperations()
+    console.log(JSON.stringify({ activeOperations: operations }, null, 2))
   } else if (action) {
     throw new Error(`Unknown action: ${action}`)
   }
