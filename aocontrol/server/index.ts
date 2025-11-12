@@ -4,7 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createSqliteClient } from './db.js'
-import { loadProcessesWith, hydrateWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith } from './fn.js'
+import { loadProcessesWith, hydrateWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith, rollingHydrationWith, stopOperation, getActiveOperations } from './fn.js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,6 +30,7 @@ async function startServer() {
   const readProcesses = readProcessesWith({ db })
   const summary = summaryWith({ db })
   const cleanBadProcs = cleanBadProcsWith({ db })
+  const rollingHydration = rollingHydrationWith({ db })
 
   app.post('/api/load', async (req, res) => {
   try {
@@ -126,6 +127,40 @@ app.get('/api/processes', async (req, res) => {
       res.json(result)
     } catch (error) {
       console.error('Error cleaning bad processes:', error)
+      res.status(500).json({ error: (error as Error).message })
+    }
+  })
+
+  app.post('/api/rolling-hydration', async (_req, res) => {
+    try {
+      const operationId = await rollingHydration()
+      res.json({ success: true, operationId, message: 'Started rolling hydration for NOPROGRESS processes' })
+    } catch (error) {
+      console.error('Error starting rolling hydration:', error)
+      res.status(500).json({ error: (error as Error).message })
+    }
+  })
+
+  app.post('/api/stop-rolling-hydration', async (req, res) => {
+    try {
+      const { operationId } = req.body
+      if (!operationId) {
+        return res.status(400).json({ error: 'operationId is required' })
+      }
+      const stopped = stopOperation(operationId)
+      res.json({ success: stopped, operationId, message: stopped ? 'Operation stopped' : 'Operation not found' })
+    } catch (error) {
+      console.error('Error stopping rolling hydration:', error)
+      res.status(500).json({ error: (error as Error).message })
+    }
+  })
+
+  app.get('/api/operations', async (_req, res) => {
+    try {
+      const operations = getActiveOperations()
+      res.json({ activeOperations: operations })
+    } catch (error) {
+      console.error('Error getting operations:', error)
       res.status(500).json({ error: (error as Error).message })
     }
   })
