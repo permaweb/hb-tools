@@ -12,7 +12,6 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 
@@ -31,9 +30,6 @@ async function startServer() {
   const readProcesses = readProcessesWith({ db })
   const summary = summaryWith({ db })
 
-  // API Routes
-
-  // POST /api/load - Load processes and hydrations from JSON
   app.post('/api/load', async (req, res) => {
   try {
     const { processes, hydrations } = req.body
@@ -48,7 +44,6 @@ async function startServer() {
   }
 })
 
-// POST /api/hydrate - Start hydration for processes
 app.post('/api/hydrate', async (req, res) => {
   try {
     const { processes } = req.body
@@ -61,7 +56,6 @@ app.post('/api/hydrate', async (req, res) => {
       processIds = allProcesses.processes
     }
 
-    // Start hydration asynchronously
     hydrate({ processes: processIds }).catch(err => {
       console.error('Hydration error:', err)
     })
@@ -73,7 +67,6 @@ app.post('/api/hydrate', async (req, res) => {
   }
 })
 
-// POST /api/refresh-status - Refresh status for processes
 app.post('/api/refresh-status', async (req, res) => {
   try {
     const { processes } = req.body
@@ -86,7 +79,6 @@ app.post('/api/refresh-status', async (req, res) => {
       processIds = allProcesses.processes
     }
 
-    // Start refresh asynchronously
     refreshStatus({ processes: processIds }).catch(err => {
       console.error('Refresh status error:', err)
     })
@@ -98,7 +90,6 @@ app.post('/api/refresh-status', async (req, res) => {
   }
 })
 
-// GET /api/processes - Read processes and their hydrations
 app.get('/api/processes', async (req, res) => {
   try {
     const pidsParam = req.query.pids as string | undefined
@@ -118,7 +109,6 @@ app.get('/api/processes', async (req, res) => {
   }
 })
 
-  // GET /api/summary - Get summary of processes and status counts
   app.get('/api/summary', async (_req, res) => {
     try {
       const result = await summary()
@@ -129,22 +119,19 @@ app.get('/api/processes', async (req, res) => {
     }
   })
 
-  // Serve static frontend in production
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../dist')));
-    // Handle client-side routing - serve index.html for all non-API routes
     app.get(/^\/(?!api).*/, (_req, res) => {
       res.sendFile(path.join(__dirname, '../dist/index.html'));
     });
   }
 
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📡 API available at http://localhost:${PORT}/api`);
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`API available at http://localhost:${PORT}/api`);
   });
 }
 
-// Start the server
 startServer().catch((error) => {
   console.error('Failed to start server:', error);
   process.exit(1);
