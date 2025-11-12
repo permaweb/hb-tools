@@ -1,24 +1,52 @@
-# Lunar
 
-Lunar is a decentralized explorer application built on top of [Arweave](https://arweave/org) and [AO](https://ao.arweave.net). It provides an interface for discovering, inspecting, and interacting with messages exchanged across the AO network. By surfacing AO messages and processes, Lunar aims to improve traceability for users of the network, and developer utility for building their permaweb applications.
 
-## Prerequisites
+# cli
 
-Before using Lunar, ensure the following dependencies are installed:
+```sh
+npm run cli -- --action load --file server/data/old/allpids.json
+npm run cli -- --action refresh-status 
+npm run cli -- --action read
+npm run cli -- --action hydrate
+npm run cli -- --action summary
 
-- Node.js version 18.0 or higher
-- `npm`
+npm run cli -- --action refresh-status --pids pid1,pid2
+npm run cli -- --action read --pids pid1,pid2
+npm run cli -- --action hydrate --pids pid1,pid2
+```
 
-## Installation
+# server
+```sh
+npm run dev:backend
 
-Install dependencies using npm:
+curl -X POST http://localhost:3001/api/load \
+    -H "Content-Type: application/json" \
+    -d '{
+      "processes": ["wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0"],
+      "hydrations": {
+        "wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0": [
+          {
+            "url": "https://push-router.forward.computer",
+            "status": "INIT"
+          }
+        ]
+      }
+    }'
 
-`npm install`
+curl -X POST http://localhost:3001/api/refresh-status \
+    -H "Content-Type: application/json" \
+    -d '{
+      "processes": ["wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0"]
+    }'
 
-## Development
+curl -X POST http://localhost:3001/api/hydrate \
+    -H "Content-Type: application/json" \
+    -d '{
+      "processes": ["wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0"]
+    }'
 
-Run the development server:
+curl "http://localhost:3001/api/processes?pids=wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0"
 
-`npm run start:development`
+curl http://localhost:3001/api/summary
 
-This will launch the app locally at http://localhost:4000. Port configurations can be modified in `package.json` and `webpack.config.js`
+curl -X POST http://localhost:3001/api/clean-bad-procs
+```
