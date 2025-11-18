@@ -27,7 +27,7 @@ export const resolveUnpushedWith = ({ db }: Deps) => {
         }
 
         console.log(`Waiting for gateway indexing...`)
-        await new Promise(resolve => setTimeout(resolve, 15))
+        await new Promise(resolve => setTimeout(resolve, 15000))
 
         const updatedReport = await missingNonceReport(txs)
 
