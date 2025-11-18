@@ -4,7 +4,7 @@ import { ErrorHandler } from './hydrator/errors.js'
 import { Logger } from './hydrator/logger.js'
 import { randomBytes } from 'crypto'
 
-type Deps = {
+export type Deps = {
     db: SqliteClient
 }
 
@@ -208,11 +208,22 @@ export const refreshStatusWith = ({ db }: Deps) => {
 export const summaryWith = ({ db }: Deps) => {
     return async () => {
         const totalProcesses = await db.getAllProcessIds()
-        const statusCounts = await db.getStatusCounts()
+        const hydrationStatusCounts = await db.getStatusCounts()
+        const repushStatusCounts = await db.getRepushStatusCounts()
+
+        const totalHydrations = Object.values(hydrationStatusCounts).reduce((sum, count) => sum + count, 0)
+        const totalRepushes = Object.values(repushStatusCounts).reduce((sum, count) => sum + count, 0)
 
         return {
             totalProcesses: totalProcesses.length,
-            statusCounts
+            hydrations: {
+                total: totalHydrations,
+                statusCounts: hydrationStatusCounts
+            },
+            repushes: {
+                total: totalRepushes,
+                statusCounts: repushStatusCounts
+            }
         }
     }
 }

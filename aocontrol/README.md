@@ -8,10 +8,13 @@ npm run cli -- --action refresh-status
 npm run cli -- --action read
 npm run cli -- --action hydrate
 npm run cli -- --action summary
+npm run cli -- --action read-repushes
 
 npm run cli -- --action refresh-status --pids pid1,pid2
 npm run cli -- --action read --pids pid1,pid2
 npm run cli -- --action hydrate --pids pid1,pid2
+
+npm run cli -- --action resolve-unpushed --txs tx1,tx2,tx3
 ```
 
 # server
@@ -46,6 +49,8 @@ curl -X POST http://localhost:3001/api/hydrate \
 
 curl "http://localhost:3001/api/processes?pids=wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0"
 
+curl http://localhost:3001/api/repushes
+
 curl http://localhost:3001/api/summary
 
 curl -X POST http://localhost:3001/api/clean-bad-procs
@@ -55,4 +60,10 @@ curl -s -X POST http://localhost:3001/api/rolling-hydration
 curl -X POST http://localhost:3001/api/stop-rolling-hydration \
     -H "Content-Type: application/json" \
     -d "{\"operationId\": \"$OPERATION_ID\"}"
+
+curl -X POST http://localhost:3001/api/resolve-unpushed \
+    -H "Content-Type: application/json" \
+    -d '{
+      "txs": ["tx1", "tx2", "tx3"]
+    }'
 ```

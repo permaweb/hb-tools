@@ -12,6 +12,7 @@ npm run cli -- --action summary
 npm run cli -- --action refresh-status --pids pid1,pid2
 npm run cli -- --action read --pids pid1,pid2
 npm run cli -- --action hydrate --pids pid1,pid2
+npm run cli -- --action resolve-unpushed --txs tx1,tx2,tx3
 ```
 
 # server
@@ -49,4 +50,10 @@ curl "http://localhost:3001/api/processes?pids=wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJ
 curl http://localhost:3001/api/summary
 
 curl -X POST http://localhost:3001/api/clean-bad-procs
+
+curl -X POST http://localhost:3001/api/resolve-unpushed \
+      -H "Content-Type: application/json" \
+      -d '{
+        "txs": ["14AWd4r_Spgfgg83LlWQQ4pA3EC2pjLhRqz23Z6tv94"]
+      }'
 ```

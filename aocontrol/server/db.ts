@@ -18,6 +18,14 @@ export interface Hydration {
   status: string
 }
 
+export interface Repush {
+  processId: string
+  messageId: string
+  status: string
+  reasons?: string
+  timestamp: number
+}
+
 export interface SqliteClient {
   query: (statement: SqlStatement) => Promise<any[]>
   run: (statement: SqlStatement) => Promise<Database.RunResult>
@@ -25,9 +33,12 @@ export interface SqliteClient {
   pragma: (value: string, options?: Database.PragmaOptions) => Promise<any>
   saveProcess: (processId: string, timestamp?: number) => Promise<Database.RunResult>
   saveHydration: (processId: string, url: string, status: string, timestamp?: number) => Promise<Database.RunResult>
+  saveRepush: (processId: string, messageId: string, status: string, reason?: string, timestamp?: number) => Promise<Database.RunResult>
   getAllProcessIds: () => Promise<string[]>
   getHydrationsByProcessId: (processId: string) => Promise<Hydration[]>
+  getRepushes: () => Promise<Repush[]>
   getStatusCounts: () => Promise<Record<string, number>>
+  getRepushStatusCounts: () => Promise<Record<string, number>>
   deleteProcess: (processId: string) => Promise<Database.RunResult>
   db: SqliteDatabase
 }
@@ -52,6 +63,19 @@ const createHydrations = async (db: SqliteDatabase): Promise<Database.RunResult>
   );`
 ).run()
 
+const createRepushes = async (db: SqliteDatabase): Promise<Database.RunResult> => db.prepare(
+  `CREATE TABLE IF NOT EXISTS repushes(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    processId TEXT NOT NULL,
+    messageId TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('INIT', 'REPUSHED', 'CANNOTPUSHALL')),
+    reasons TEXT,
+    timestamp INTEGER NOT NULL,
+    UNIQUE(processId, messageId),
+    FOREIGN KEY (processId) REFERENCES processes(processId) ON DELETE CASCADE
+  );`
+).run()
+
 export async function createSqliteClient ({ url }: SqliteClientConfig): Promise<SqliteClient> {
   // Create directory if it doesn't exist
   const dbDir = dirname(url)
@@ -71,6 +95,12 @@ export async function createSqliteClient ({ url }: SqliteClientConfig): Promise<
     await Promise.resolve()
       .then(() => createProcesses(db))
       .then(() => createHydrations(db))
+      .then(() => createRepushes(db))
+  } else {
+    await Promise.resolve()
+      .then(() => createProcesses(db))
+      .then(() => createHydrations(db))
+      .then(() => createRepushes(db))
   }
 
   return {
@@ -90,6 +120,11 @@ export async function createSqliteClient ({ url }: SqliteClientConfig): Promise<
         'INSERT OR REPLACE INTO hydrations (processId, url, status, timestamp) VALUES (?, ?, ?, ?)'
       ).run(processId, url, status, timestamp)
     },
+    saveRepush: async (processId: string, messageId: string, status: string, reason?: string, timestamp: number = Date.now()) => {
+      return db.prepare(
+        'INSERT OR REPLACE INTO repushes (processId, messageId, status, reasons, timestamp) VALUES (?, ?, ?, ?, ?)'
+      ).run(processId, messageId, status, reason, timestamp)
+    },
     getAllProcessIds: async () => {
       const rows = db.prepare('SELECT processId FROM processes').all() as { processId: string }[]
       return rows.map(row => row.processId)
@@ -98,8 +133,19 @@ export async function createSqliteClient ({ url }: SqliteClientConfig): Promise<
       const rows = db.prepare('SELECT url, status FROM hydrations WHERE processId = ?').all(processId) as Hydration[]
       return rows
     },
+    getRepushes: async () => {
+      const rows = db.prepare('SELECT processId, messageId, status, reasons, timestamp FROM repushes ORDER BY timestamp DESC').all() as Repush[]
+      return rows
+    },
     getStatusCounts: async () => {
       const rows = db.prepare('SELECT status, COUNT(*) as count FROM hydrations GROUP BY status').all() as Array<{ status: string, count: number }>
+      return rows.reduce((acc, { status, count }) => {
+        acc[status] = count
+        return acc
+      }, {} as Record<string, number>)
+    },
+    getRepushStatusCounts: async () => {
+      const rows = db.prepare('SELECT status, COUNT(*) as count FROM repushes GROUP BY status').all() as Array<{ status: string, count: number }>
       return rows.reduce((acc, { status, count }) => {
         acc[status] = count
         return acc

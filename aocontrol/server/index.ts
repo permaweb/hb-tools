@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createSqliteClient } from './db.js'
 import { loadProcessesWith, hydrateWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith, rollingHydrationWith, stopOperation, getActiveOperations } from './fn.js'
+import { resolveUnpushedWith, readRepushesWith } from './fn-legacy.js'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,6 +32,8 @@ async function startServer() {
   const summary = summaryWith({ db })
   const cleanBadProcs = cleanBadProcsWith({ db })
   const rollingHydration = rollingHydrationWith({ db })
+  const resolveUnpushed = resolveUnpushedWith({ db })
+  const readRepushes = readRepushesWith({ db })
 
   app.post('/api/load', async (req, res) => {
   try {
@@ -111,6 +114,16 @@ app.get('/api/processes', async (req, res) => {
   }
 })
 
+  app.get('/api/repushes', async (_req, res) => {
+    try {
+      const result = await readRepushes()
+      res.json(result)
+    } catch (error) {
+      console.error('Error reading repushes:', error)
+      res.status(500).json({ error: (error as Error).message })
+    }
+  })
+
   app.get('/api/summary', async (_req, res) => {
     try {
       const result = await summary()
@@ -161,6 +174,20 @@ app.get('/api/processes', async (req, res) => {
       res.json({ activeOperations: operations })
     } catch (error) {
       console.error('Error getting operations:', error)
+      res.status(500).json({ error: (error as Error).message })
+    }
+  })
+
+  app.post('/api/resolve-unpushed', async (req, res) => {
+    try {
+      const { txs } = req.body
+      if (!txs || !Array.isArray(txs)) {
+        return res.status(400).json({ error: 'txs array is required' })
+      }
+      await resolveUnpushed(txs)
+      res.json({ success: true, message: `Resolved unpushed for ${txs.length} transactions` })
+    } catch (error) {
+      console.error('Error resolving unpushed:', error)
       res.status(500).json({ error: (error as Error).message })
     }
   })

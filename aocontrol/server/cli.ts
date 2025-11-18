@@ -12,6 +12,7 @@ import {
   stopOperation,
   getActiveOperations
 } from './fn.js'
+import { resolveUnpushedWith, readRepushesWith } from './fn-legacy.js'
 
 function parseArgs() {
   const args = process.argv.slice(2)
@@ -50,6 +51,8 @@ async function main() {
   const summary = summaryWith({ db })
   const cleanBadProcs = cleanBadProcsWith({ db })
   const rollingHydration = rollingHydrationWith({ db })
+  const resolveUnpushed = resolveUnpushedWith({ db })
+  const readRepushes = readRepushesWith({ db })
 
   if (action === 'load') {
     const filePath = args.file
@@ -114,6 +117,16 @@ async function main() {
   } else if (action === 'list-operations') {
     const operations = getActiveOperations()
     console.log(JSON.stringify({ activeOperations: operations }, null, 2))
+  } else if (action === 'resolve-unpushed') {
+    const txsParam = args.txs
+    if (!txsParam) {
+      throw new Error('--txs argument is required for resolve-unpushed action')
+    }
+    const txs = txsParam.split(',').map(id => id.trim())
+    await resolveUnpushed(txs)
+  } else if (action === 'read-repushes') {
+    const result = await readRepushes()
+    console.log(JSON.stringify(result, null, 2))
   } else if (action) {
     throw new Error(`Unknown action: ${action}`)
   }
