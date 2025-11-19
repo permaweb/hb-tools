@@ -22,3 +22,5 @@ rebar3.crashdump
 *~
 apps
 *cache*
+.env
+*.env

@@ -198,6 +198,7 @@ export const refreshStatusWith = ({ db }: Deps) => {
                 batch.map(async ({ processId, url }) => {
                     const newStatus = await checkStatus({ id: processId, url })
                     await new Promise(resolve => setTimeout(resolve, 50))
+                    console.log(processId, url, newStatus)
                     await db.saveHydration(processId, url, newStatus)
                 })
             )
