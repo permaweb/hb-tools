@@ -6,6 +6,16 @@ A suite of integration, compatibility, and performance testing utilities for AO 
 
 Compatibility / Load Tests built in JavaScript.
 
+#### Quickstart
+
+Note: The local group points to `http://localhost:8734`, ensure HyperBEAM is running before running these tests.
+
+```
+cd clienthb
+npm run clean:install
+npm run group local_basic
+```
+
 #### Key Features
 
 - **Core Library Validation**: Direct testing of `@permaweb/ao-core-libs` functionality
@@ -71,15 +81,6 @@ npm run group local_basic
 node src/compatibility.js local_basic
 node src/message-passing.js local_basic
 ```
-
-#### Monitoring and Metrics
-
-The test scripts output various metrics that can be used for monitoring:
-
-- **Success Rate**: Percentage of successful operations
-- **Throughput**: Messages or operations per second
-- **Latency**: Response time distributions (p50, p95, p99)
-- **Error Types**: Classification of failures for debugging
 
 #### Performance Tuning
 
