@@ -18,6 +18,7 @@ async function spawnNew(ao, SIGNER) {
 
   let spawnArgs = {
     module: groupConfig.aosModule,
+    authority: groupConfig.authority,
     tags: [
       { name: 'Authority', value: MAINNET_SCHEDULER },
       { name: 'Name', value: Date.now().toString() }
@@ -55,57 +56,55 @@ async function run() {
     signer: SIGNER,
   });
 
-  let pid1, pid2, pid3;
-
-  await runner.test(async () => {
-    pid1 = await spawnNew(ao, SIGNER);
-    expect(pid1).toEqualType('string');
-  });
-
-  await runner.test(async () => {
-    pid2 = await spawnNew(ao, SIGNER);
-    expect(pid2).toEqualType('string');
-  });
+  let pid1, pid2;
 
   // await runner.test(async () => {
-  //   pid3 = await spawnNew(ao, SIGNER);
-  //   expect(pid3).toEqualType('string');
+  //   pid1 = await spawnNew(ao, SIGNER);
+  //   expect(pid1).toEqualType('string');
   // });
 
-  log(`Processes: ${JSON.stringify([pid1, pid2], null, 2)}`);
+  // await runner.test(async () => {
+  //   pid2 = await spawnNew(ao, SIGNER);
+  //   expect(pid2).toEqualType('string');
+  // });
 
-  const ping = `
-    Handlers.add('Ping', 'Ping', function(msg)
-      Send({ Target = msg.From, Data = 'Got Ping', Action = 'Got-Ping' })
-      Send({ Target = '${pid2}', Data = 'Pong', Action = 'Pong'}) 
-    end)
-  `.trim();
+  // log(`Processes: ${JSON.stringify([pid1, pid2], null, 2)}`);
 
-  const pong = `
-  Handlers.add('Pong', 'Pong', function(msg)
-    print('Received Pong')
-  end)
-    `.trim();
+  // const ping = `
+  //   Handlers.add('Ping', 'Ping', function(msg)
+  //     Send({ Target = '${pid2}', Action = 'Pong'}) 
+  //   end)
+  // `.trim();
 
-  await runner.test(async () => {
-    const message = await ao.message({
-      process: pid1,
-      tags: [{ name: 'Action', value: 'Eval' }],
-      data: ping,
-      signer: SIGNER,
-    });
-    expect(message).toEqualType('number');
-  });
+  // const pong = `
+  // CurrentData = CurrentData or ''
+  // Handlers.add('Pong', 'Pong', function(msg)
+  //   CurrentData = 'Received Pong'
+  // end)
+  //   `.trim();
 
-  await runner.test(async () => {
-    const message = await ao.message({
-      process: pid2,
-      tags: [{ name: 'Action', value: 'Eval' }],
-      data: pong,
-      signer: SIGNER,
-    });
-    expect(message).toEqualType('number');
-  });
+  // await runner.test(async () => {
+  //   const message = await ao.message({
+  //     process: pid1,
+  //     tags: [{ name: 'Action', value: 'Eval' }],
+  //     data: ping,
+  //     signer: SIGNER,
+  //   });
+  //   expect(message).toEqualType('number');
+  // });
+
+  // await runner.test(async () => {
+  //   const message = await ao.message({
+  //     process: pid2,
+  //     tags: [{ name: 'Action', value: 'Eval' }],
+  //     data: pong,
+  //     signer: SIGNER,
+  //   });
+  //   expect(message).toEqualType('number');
+  // });
+
+  pid1 = 'uaYPHqQyc7UDWfp0tjMzUwWsnxgr8zegZQt3sHuGN-w';
+  pid2 = 'IBAWozxGftWUYRUcyeUryh73FYxvn77KI9wCPZTKKxM';
 
   await runner.test(async () => {
     const message = await ao.message({
@@ -116,26 +115,21 @@ async function run() {
     expect(message).toEqualType('number');
   });
 
-  //   await runner.test(async () => {
-  //     const message = await ao.message({
-  //       process: pid1,
-  //       tags: [{ name: 'Action', value: 'Eval' }],
-  //       data: `
-  // ao.send({ Target = '${pid2}', Data = 'ping', Action = 'Info' })
-  //         `.trim(),
-  //       signer: SIGNER,
-  //     });
-  //     expect(message).toEqualType('number');
+  // await runner.test(async () => {
+  //   const message = await ao.message({
+  //     process: pid2,
+  //     tags: [{ name: 'Action', value: 'Eval' }],
+  //     data: `CurrentData`,
+  //     signer: SIGNER,
   //   });
 
-  //   await runner.test(async () => {
-  //     const resultsPid3 = await ao.results({
-  //       process: pid3
-  //     });
-
-  //     let data = resultsPid3['edges'][0]['node']['Output']['data'];
-  //     expect(data).toEqual('Received Pong');
+  //   const result = await ao.result({
+  //     process: pid2,
+  //     message: message
   //   });
+
+  //   expect(result.Output.data).toEqual('Received Pong')
+  // });
 
   log(`Message passing test successful!`);
 

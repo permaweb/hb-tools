@@ -16,7 +16,8 @@
     "schedulerAddress": "mYJTM8VpIibDLuyGLQTcbcPy-LeOY48qzECADTUYfWc"
   },
   "remote_schedule_basic": {
-    "url": "http://localhost:8734"
+    "url": "http://localhost:8734",
+    "authority": "mYJTM8VpIibDLuyGLQTcbcPy-LeOY48qzECADTUYfWc"
   },
   "dev_basic": {
     "url": "https://workshop.forward.computer"
@@ -25,8 +26,7 @@
     "url": "https://forward.computer"
   },
   "portal_basic": {
-    "url": "https://hb.portalinto.com",
-    "schedulerAddress": "a5ZMUKbGClAsKzB4SHDYrwkOZZHIIfpbaxrmKwUHCe8"
+    "url": "https://hb.portalinto.com"
   },
   "push_1": {
     "url": "https://push-1.forward.computer"

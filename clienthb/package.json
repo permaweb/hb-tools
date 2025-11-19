@@ -12,7 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@permaweb/ao-core-libs": "^0.0.5",
-    "@permaweb/aoconnect": "https://arweave.net/doREFDbX1VrW-gZfAvA6DqT72l-N8w1iemW-_mkfQzM"
+    "@permaweb/ao-core-libs": "0.0.7",
+    "@permaweb/aoconnect": "https://arweave.net/D6bR6O8X-3Cw5ng_nCyhW9a_hUuZDLXH_Dw2kAeDWNE"
   }
 }
