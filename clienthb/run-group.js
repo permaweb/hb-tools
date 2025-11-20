@@ -45,8 +45,7 @@ const scripts = groupConfig.scripts || [];
 
 const srcDir = path.join(__dirname, 'src');
 
-console.log(`Running group '${group}' with ${scripts.length} scripts`);
-console.log(`Scripts: ${scripts.join(', ')}`);
+console.log(`Running group '${group}' with ${scripts.length} tests`);
 console.log(`Arguments: ${group} ${additionalArgs.join(' ')}`);
 if (!continueOnError) {
   console.log(`Mode: Stop on error enabled`);
@@ -147,7 +146,7 @@ async function runScripts() {
   const successful = results.filter(r => r.status === 'fulfilled');
   const failed = results.filter(r => r.status === 'rejected');
 
-  console.log(`Scripts: ${successful.length}/${scripts.length} successful`);
+  console.log(`Tests: ${successful.length}/${scripts.length} successful`);
 
   const totalTests = totalTestsPassed + totalTestsFailed;
   if (totalTests > 0) {
@@ -158,14 +157,14 @@ async function runScripts() {
   }
 
   if (successful.length > 0) {
-    console.log('\x1b[32mCompleted scripts:\x1b[0m');
+    console.log('\x1b[32mCompleted Tests:\x1b[0m');
     successful.forEach(result => {
       console.log(`  - ${result.value.script}`);
     });
   }
 
   if (failed.length > 0) {
-    console.log('\x1b[31mFailed scripts:\x1b[0m');
+    console.log('\x1b[31mFailed Tests:\x1b[0m');
     failed.forEach(result => {
       const reason = result.reason;
       console.log(`  - ${reason.script}: ${reason.error ? reason.error.message : `exit code ${reason.code}`}`);

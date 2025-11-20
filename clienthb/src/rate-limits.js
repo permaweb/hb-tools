@@ -15,6 +15,7 @@ function log(...args) {
 
 async function run() {
     const runner = createTestRunner();
+    runner.start();
     log(`Running rate limit tests...`);
     if (!config[group]) throw new Error(`Group '${group}' not found in ${configPath}`);
 

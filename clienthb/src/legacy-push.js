@@ -23,6 +23,7 @@ let exitCode = 0;
 
 async function runLegacyProcessPush() {
     const runner = createTestRunner();
+    runner.start();
 
     let connectDepsLegacy = { MODE: 'legacy', signer: SIGNER };
 

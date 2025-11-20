@@ -39,6 +39,7 @@ async function spawnNew(ao, SIGNER) {
 
 async function run() {
   const runner = createTestRunner();
+  runner.start();
   log(`Running message passing tests...`);
   if (!config[group]) throw new Error(`Group '${group}' not found in ${configPath}`);
 

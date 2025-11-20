@@ -92,6 +92,7 @@ async function workerRun({
     overrides = {},
 }) {
     const runner = createTestRunner();
+    runner.start();
     log(`Worker ${workerIndex}: Starting initialization`);
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     if (!config[group]) throw new Error(`Group '${group}' not found in ${configPath}`);

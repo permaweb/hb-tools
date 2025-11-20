@@ -53,15 +53,25 @@ function normalizeExpectedType(expected) {
 export function createTestRunner() {
     let passed = 0;
     let failed = 0;
+    let startTime = null;
 
     return {
+        start() {
+            startTime = Date.now();
+        },
+
         async test(testFn) {
+            const start = Date.now();
             try {
-                await testFn();
+                const result = await testFn();
                 passed++;
+                const duration = ((Date.now() - start) / 1000).toFixed(2);
+                return { result, duration };
             } catch (error) {
                 console.error(error);
                 failed++;
+                const duration = ((Date.now() - start) / 1000).toFixed(2);
+                throw error;
             }
         },
 
@@ -71,20 +81,25 @@ export function createTestRunner() {
 
         getSummary(testSuiteName = 'Tests') {
             const exitCode = failed > 0 ? 1 : 0;
-            
+
             if (failed > 0) {
                 console.log(`\x1b[31m${testSuiteName} Failed\x1b[0m`);
             } else {
                 console.log(`\x1b[32mAll ${testSuiteName} Passed\x1b[0m`);
             }
-            
+
             console.log(`${testSuiteName} Summary:`);
             console.log(`\x1b[32mPassed\x1b[0m: ${passed}`);
             console.log(`\x1b[${exitCode === 1 ? '31' : '90'}mFailed\x1b[0m: ${failed}`);
-            
+
+            if (startTime !== null) {
+                const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2);
+                console.log(`\x1b[1mTotal duration: ${totalDuration}s\x1b[0m`);
+            }
+
             // Output parseable test counts for run-group.js
             console.log(`TEST_RESULTS: passed=${passed} failed=${failed} total=${passed + failed}`);
-            
+
             return exitCode;
         }
     };

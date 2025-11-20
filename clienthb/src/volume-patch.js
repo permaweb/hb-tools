@@ -26,6 +26,7 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
 
 (async function () {
     const runner = createTestRunner();
+    runner.start();
     const ao = connect({
         MODE: 'mainnet',
         URL: MAINNET_URL,
