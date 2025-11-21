@@ -4,11 +4,39 @@ A suite of integration, compatibility, and performance testing utilities for AO 
 
 ## ClientHB
 
-Compatibility / Load Tests built in JavaScript.
+Integration / Load Tests built in JavaScript.
 
-#### Quickstart
+### Quickstart
 
-Note: The local group points to `http://localhost:8734`, ensure HyperBEAM is running before running these tests.
+#### Required Environment Variables
+
+- `PATH_TO_WALLET`: JWK Interface of the Arweave Wallet the tests will use
+
+#### Configuration
+
+**All scripts require a configuration file (default: `config.json`) with group definitions:**
+
+```json
+{
+  "local_basic": {
+    "url": "http://localhost:8734",
+    "schedulerAddress": "NoZH3pueH0Cih6zjSNu_KRAcmg4ZJV1aGHKi0Pi5_Hc"
+  }
+}
+```
+
+**Note**: To run against your local HyperBEAM node (`local_basic` group), be sure to switch the `schedulerAddress` in `config.json` to be your local HyperBEAM node address.
+
+Each group must include:
+
+- `url` - HyperBEAM URL (e.g., `http://localhost:8734`)
+
+Each field specified in `defaults` can be overridden.
+- `schedulerAddress` - Scheduler process address for handling message ordering
+- `aosModule` - Process module to use when spawning
+- `scripts` - Array of script filenames to run with `run-group.js` (optional)
+
+**Note**: The local group points to `http://localhost:8734`, ensure HyperBEAM is running before running these tests.
 
 ```
 cd clienthb
@@ -24,42 +52,6 @@ npm run group local_basic
 - **Performance Benchmarking**: Measure message throughput and data handling capabilities
 - **Inter-Process Communication**: Test message passing between AO processes
 
-#### Configuration
-
-**All scripts require a configuration file (default: `config.json`) with group definitions:**
-
-```json
-{
-  "local_basic": {
-    "url": "http://localhost:8734",
-    "schedulerAddress": "NoZH3pueH0Cih6zjSNu_KRAcmg4ZJV1aGHKi0Pi5_Hc"
-  }
-}
-```
-
-Each group must include:
-
-- `url` - HyperBEAM URL (e.g., `http://localhost:8734`)
-
-Each field specified in `defaults` can be overridden.
-- `schedulerAddress` - Scheduler process address for handling message ordering
-- `aosModule` - Process module to use when spawning
-- `scripts` - Array of script filenames to run with `run-group.js` (optional)
-
-#### Required Environment Variables
-
-- `PATH_TO_WALLET`: JWK Interface of the Arweave Wallet the tests will use
-
-#### Available Test Scripts
-
-| Script               | Description                              |
-| -------------------- | ---------------------------------------- |
-| `core-libs.js`       | Tests direct library integration         |
-| `compatibility.js`   | Validates AO Connet API compatibility    |
-| `message-passing.js` | Tests inter-process communication        |
-| `patch.js`           | Benchmarks data handling performance     |
-| `volume.js`          | Load tests with configurable concurrency |
-
 #### Adding New Test Scripts
 
 To add a new test script:
@@ -67,7 +59,6 @@ To add a new test script:
 1. Create the script in `clienthb/src/`
 2. Follow the existing pattern for configuration handling
 3. Add the script to relevant groups in `config.json`
-4. Document usage in this README
 
 #### Testing Scenarios
 
@@ -86,7 +77,7 @@ node src/message-passing.js local_basic
 
 ###### Volume Test Parameters
 
-When running volume tests (`volume.js`), you can fine-tune performance by adjusting these parameters in the script:
+When running volume tests (`volume.js`), you can configure performance by adjusting these parameters in the script:
 
 | Parameter                      | Default | Description                                               |
 | ------------------------------ | ------- | --------------------------------------------------------- |
