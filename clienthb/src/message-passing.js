@@ -59,53 +59,62 @@ async function run() {
 
   let pid1, pid2;
 
-  // await runner.test(async () => {
-  //   pid1 = await spawnNew(ao, SIGNER);
-  //   expect(pid1).toEqualType('string');
-  // });
+  await runner.test(async () => {
+    pid1 = await spawnNew(ao, SIGNER);
+    expect(pid1).toEqualType('string');
+    return pid1;
+  }).then(({ result, duration }) => {
+    log(`Process 1 spawned: ${result} (${duration}s)`);
+  });
 
-  // await runner.test(async () => {
-  //   pid2 = await spawnNew(ao, SIGNER);
-  //   expect(pid2).toEqualType('string');
-  // });
+  await runner.test(async () => {
+    pid2 = await spawnNew(ao, SIGNER);
+    expect(pid2).toEqualType('string');
+    return pid2;
+  }).then(({ result, duration }) => {
+    log(`Process 2 spawned: ${result} (${duration}s)`);
+  });
 
-  // log(`Processes: ${JSON.stringify([pid1, pid2], null, 2)}`);
+  log(`Processes: ${JSON.stringify([pid1, pid2], null, 2)}`);
 
-  // const ping = `
-  //   Handlers.add('Ping', 'Ping', function(msg)
-  //     Send({ Target = '${pid2}', Action = 'Pong'}) 
-  //   end)
-  // `.trim();
+  const ping = `
+    Handlers.add('Ping', 'Ping', function(msg)
+      Send({ Target = '${pid2}', Action = 'Pong'}) 
+    end)
+  `.trim();
 
-  // const pong = `
-  // CurrentData = CurrentData or ''
-  // Handlers.add('Pong', 'Pong', function(msg)
-  //   CurrentData = 'Received Pong'
-  // end)
-  //   `.trim();
+  const pong = `
+  CurrentData = CurrentData or ''
+  Handlers.add('Pong', 'Pong', function(msg)
+    CurrentData = 'Received Pong'
+  end)
+    `.trim();
 
-  // await runner.test(async () => {
-  //   const message = await ao.message({
-  //     process: pid1,
-  //     tags: [{ name: 'Action', value: 'Eval' }],
-  //     data: ping,
-  //     signer: SIGNER,
-  //   });
-  //   expect(message).toEqualType('number');
-  // });
+  await runner.test(async () => {
+    const message = await ao.message({
+      process: pid1,
+      tags: [{ name: 'Action', value: 'Eval' }],
+      data: ping,
+      signer: SIGNER,
+    });
+    expect(message).toEqualType('number');
+    return message;
+  }).then(({ result, duration }) => {
+    log(`Added Ping handler | Message: ${result} (${duration}s)`);
+  });
 
-  // await runner.test(async () => {
-  //   const message = await ao.message({
-  //     process: pid2,
-  //     tags: [{ name: 'Action', value: 'Eval' }],
-  //     data: pong,
-  //     signer: SIGNER,
-  //   });
-  //   expect(message).toEqualType('number');
-  // });
-
-  pid1 = 'uaYPHqQyc7UDWfp0tjMzUwWsnxgr8zegZQt3sHuGN-w';
-  pid2 = 'IBAWozxGftWUYRUcyeUryh73FYxvn77KI9wCPZTKKxM';
+  await runner.test(async () => {
+    const message = await ao.message({
+      process: pid2,
+      tags: [{ name: 'Action', value: 'Eval' }],
+      data: pong,
+      signer: SIGNER,
+    });
+    expect(message).toEqualType('number');
+    return message;
+  }).then(({ result, duration }) => {
+    log(`Added Pong handler | Message: ${result} (${duration}s)`);
+  });
 
   await runner.test(async () => {
     const message = await ao.message({
@@ -114,23 +123,29 @@ async function run() {
       signer: SIGNER,
     });
     expect(message).toEqualType('number');
+    return message;
+  }).then(({ result, duration }) => {
+    log(`Sent Ping message: ${result} (${duration}s)`);
   });
 
-  // await runner.test(async () => {
-  //   const message = await ao.message({
-  //     process: pid2,
-  //     tags: [{ name: 'Action', value: 'Eval' }],
-  //     data: `CurrentData`,
-  //     signer: SIGNER,
-  //   });
+  await runner.test(async () => {
+    const message = await ao.message({
+      process: pid2,
+      tags: [{ name: 'Action', value: 'Eval' }],
+      data: `CurrentData`,
+      signer: SIGNER,
+    });
 
-  //   const result = await ao.result({
-  //     process: pid2,
-  //     message: message
-  //   });
+    const result = await ao.result({
+      process: pid2,
+      message: message
+    });
 
-  //   expect(result.Output.data).toEqual('Received Pong')
-  // });
+    expect(result.Output.data).toEqual('Received Pong')
+    return result.Output.data;
+  }).then(({ result, duration }) => {
+    log(`Verified message received: ${result} (${duration}s)`);
+  });
 
   log(`Message passing test successful!`);
 

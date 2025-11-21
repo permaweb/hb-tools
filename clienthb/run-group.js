@@ -109,6 +109,7 @@ async function runScripts() {
   const results = [];
   let totalTestsPassed = 0;
   let totalTestsFailed = 0;
+  const startTime = performance.now();
 
   for (const scriptName of scripts) {
     try {
@@ -146,6 +147,11 @@ async function runScripts() {
   const successful = results.filter(r => r.status === 'fulfilled');
   const failed = results.filter(r => r.status === 'rejected');
 
+  const endTime = performance.now();
+  const durationMs = Math.round(endTime - startTime);
+  const durationSec = (durationMs / 1000).toFixed(2);
+
+  console.log(`\nTotal Duration: ${durationMs}ms (${durationSec}s)`);
   console.log(`Tests: ${successful.length}/${scripts.length} successful`);
 
   const totalTests = totalTestsPassed + totalTestsFailed;
@@ -154,13 +160,6 @@ async function runScripts() {
     console.log(`   \x1b[32mPassed\x1b[0m: ${totalTestsPassed}`);
     console.log(`   \x1b[${totalTestsFailed > 0 ? '31' : '90'}mFailed\x1b[0m: ${totalTestsFailed}`);
     console.log(`   Total: ${totalTests}`);
-  }
-
-  if (successful.length > 0) {
-    console.log('\x1b[32mCompleted Tests:\x1b[0m');
-    successful.forEach(result => {
-      console.log(`  - ${result.value.script}`);
-    });
   }
 
   if (failed.length > 0) {

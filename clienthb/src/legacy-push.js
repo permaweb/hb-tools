@@ -52,8 +52,10 @@ async function runLegacyProcessPush() {
     let processIdMainnet;
     await runner.test(async () => {
         processIdMainnet = await aoMainnet.spawn(spawnArgsMainnet);
-        modeLog('mainnet', `Process ID: ${processIdMainnet}`);
         expect(processIdMainnet).toEqualType('string');
+        return processIdMainnet;
+    }).then(({ result, duration }) => {
+        modeLog('mainnet', `Process ID: ${result} (${duration}s)`);
     });
 
     let versionMessageMainnetProcess;
@@ -64,8 +66,10 @@ async function runLegacyProcessPush() {
             data: `require('.process')._version`,
             signer: SIGNER
         });
-        modeLog('mainnet', `Message: ${versionMessageMainnetProcess}`);
         expect(versionMessageMainnetProcess).toEqualType('number');
+        return versionMessageMainnetProcess;
+    }).then(({ result, duration }) => {
+        modeLog('mainnet', `Message: ${result} (${duration}s)`);
     });
     
     let versionMessageLegacyProcess;
@@ -76,8 +80,10 @@ async function runLegacyProcessPush() {
             data: `require('.process')._version`,
             signer: SIGNER
         });
-        modeLog('mainnet', `Message: ${versionMessageLegacyProcess}`);
         expect(versionMessageLegacyProcess).toEqualType('number');
+        return versionMessageLegacyProcess;
+    }).then(({ result, duration }) => {
+        modeLog('mainnet', `Message (legacy process): ${result} (${duration}s)`);
     });
 
     exitCode = runner.getSummary('Legacy Process Push Tests');

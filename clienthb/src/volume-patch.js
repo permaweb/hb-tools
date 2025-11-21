@@ -44,7 +44,9 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
                 tags: [{ name: 'Name', value: new Date().getTime().toString() }],
             });
             expect(processId).toEqualType('string');
-            log(`Process ID: ${processId}`);
+            return processId;
+        }).then(({ result, duration }) => {
+            log(`Process ID: ${result} (${duration}s)`);
         });
 
         await runner.test(async () => {
@@ -62,7 +64,9 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
                 signer: SIGNER,
             });
             expect(handlerAddMessage).toEqualType('number');
-            log(`Added Handlers | Message: ${handlerAddMessage}`);
+            return handlerAddMessage;
+        }).then(({ result, duration }) => {
+            log(`Added Handlers | Message: ${result} (${duration}s)`);
         });
 
         const data = JSON.stringify({
@@ -72,8 +76,6 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
                 DateCreated: new Date().getTime().toString()
             }))
         });
-
-        const t0Send = performance.now();
 
         log(`Setting Index...`);
 
@@ -85,23 +87,14 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
                 signer: SIGNER,
             });
             expect(setIndexMessage).toEqualType('number');
-            log(`Set Index | Message: ${setIndexMessage}`);
-
-            const t1Send = performance.now();
-
-            const durationMsSend = Math.round(t1Send - t0Send);
-            const durationSecSend = (durationMsSend / 1000).toFixed(2);
-
-            log(`Message Send: ${durationMsSend}ms (${durationSecSend}s)`);
+            return setIndexMessage;
+        }).then(({ result, duration }) => {
+            log(`Set Index | Message: ${result} (${duration}s)`);
         });
 
         await runner.test(async () => {
-            const t0Fetch = performance.now();
-
             const response = await fetch(`${MAINNET_URL}/${processId}/now/zone`);
             expect(response.ok).toEqual(true);
-
-            const t1Fetch = performance.now();
 
             const buf = Buffer.from(await response.arrayBuffer());
 
@@ -109,12 +102,10 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
             const sizeMB = (sizeBytes / (1024 * 1024)).toFixed(2);
             const sizeGB = (sizeBytes / (1024 * 1024 * 1024)).toFixed(2);
 
-            log(`Raw size: ${sizeBytes} bytes (${sizeMB} MB, ${sizeGB} GB)`);
-
-            const durationMsFetch = Math.round(t1Fetch - t0Fetch);
-            const durationSecFetch = (durationMsFetch / 1000).toFixed(2);
-
-            log(`Fetch: ${durationMsFetch}ms (${durationSecFetch}s)`);
+            return { sizeBytes, sizeMB, sizeGB };
+        }).then(({ result, duration }) => {
+            log(`Raw size: ${result.sizeBytes} bytes (${result.sizeMB} MB, ${result.sizeGB} GB)`);
+            log(`Fetch: ${duration}s`);
         });
 
         if (length !== indexLengths[indexLengths.length - 1]) console.log('-'.repeat(75));
