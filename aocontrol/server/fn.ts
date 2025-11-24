@@ -113,38 +113,35 @@ const startCron = async ({ id, url, db }: { id: string, url: string, db: SqliteC
 }
 
 export const readProcessesWith = ({ db }: Deps) => {
-    return async ({ processes }: { processes?: string[] } = {}): Promise<Processes> => {
+    return async ({ processes, query }: { processes?: string[], query?: string } = {}): Promise<Processes> => {
+        let processIds: string[]
+
+        // Determine which processes to query
         if (processes && processes.length > 0) {
-            const hydrations: { [key: string]: Hydration[] } = {}
-
-            for (const processId of processes) {
-                const rows = await db.getHydrationsByProcessId(processId)
-
-                if (rows.length > 0) {
-                    hydrations[processId] = rows
-                }
-            }
-
-            return {
-                processes,
-                hydrations: Object.keys(hydrations).length > 0 ? hydrations : undefined
-            }
+            processIds = processes
+        } else if (query) {
+            // If query filter is provided and no specific processes, get all processes matching the query
+            processIds = await db.getProcessIdsByQuery(query)
         } else {
-            const allProcessIds = await db.getAllProcessIds()
-            const hydrations: { [key: string]: Hydration[] } = {}
+            // No filters, get all processes
+            processIds = await db.getAllProcessIds()
+        }
 
-            for (const processId of allProcessIds) {
-                const rows = await db.getHydrationsByProcessId(processId)
+        const hydrations: { [key: string]: Hydration[] } = {}
+        const filteredProcesses: string[] = []
 
-                if (rows.length > 0) {
-                    hydrations[processId] = rows
-                }
+        for (const processId of processIds) {
+            const rows = await db.getHydrationsByProcessId(processId, query)
+
+            if (rows.length > 0) {
+                hydrations[processId] = rows
+                filteredProcesses.push(processId)
             }
+        }
 
-            return {
-                processes: allProcessIds,
-                hydrations: Object.keys(hydrations).length > 0 ? hydrations : undefined
-            }
+        return {
+            processes: filteredProcesses,
+            hydrations: Object.keys(hydrations).length > 0 ? hydrations : undefined
         }
     }
 }

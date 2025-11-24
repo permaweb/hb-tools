@@ -18,6 +18,9 @@ export interface Hydration {
   status: string
 }
 
+// Define queryable fields for filtering hydrations
+export const QUERYABLE_HYDRATION_FIELDS = ['url'] as const
+
 export interface Repush {
   processId: string
   messageId: string
@@ -35,7 +38,8 @@ export interface SqliteClient {
   saveHydration: (processId: string, url: string, status: string, timestamp?: number) => Promise<Database.RunResult>
   saveRepush: (processId: string, messageId: string, status: string, reason?: string, timestamp?: number) => Promise<Database.RunResult>
   getAllProcessIds: () => Promise<string[]>
-  getHydrationsByProcessId: (processId: string) => Promise<Hydration[]>
+  getProcessIdsByQuery: (query: string) => Promise<string[]>
+  getHydrationsByProcessId: (processId: string, query?: string) => Promise<Hydration[]>
   getRepushes: () => Promise<Repush[]>
   getStatusCounts: () => Promise<Record<string, number>>
   getRepushStatusCounts: () => Promise<Record<string, number>>
@@ -129,7 +133,23 @@ export async function createSqliteClient ({ url }: SqliteClientConfig): Promise<
       const rows = db.prepare('SELECT processId FROM processes').all() as { processId: string }[]
       return rows.map(row => row.processId)
     },
-    getHydrationsByProcessId: async (processId: string) => {
+    getProcessIdsByQuery: async (query: string) => {
+      // Build OR clause for all queryable fields
+      const conditions = QUERYABLE_HYDRATION_FIELDS.map(field => `${field} = ?`).join(' OR ')
+      const sql = `SELECT DISTINCT processId FROM hydrations WHERE ${conditions}`
+      const params = QUERYABLE_HYDRATION_FIELDS.map(() => query)
+      const rows = db.prepare(sql).all(...params) as { processId: string }[]
+      return rows.map(row => row.processId)
+    },
+    getHydrationsByProcessId: async (processId: string, query?: string) => {
+      if (query) {
+        // Build OR clause for all queryable fields
+        const conditions = QUERYABLE_HYDRATION_FIELDS.map(field => `${field} = ?`).join(' OR ')
+        const sql = `SELECT url, status FROM hydrations WHERE processId = ? AND (${conditions})`
+        const params = [processId, ...QUERYABLE_HYDRATION_FIELDS.map(() => query)]
+        const rows = db.prepare(sql).all(...params) as Hydration[]
+        return rows
+      }
       const rows = db.prepare('SELECT url, status FROM hydrations WHERE processId = ?').all(processId) as Hydration[]
       return rows
     },

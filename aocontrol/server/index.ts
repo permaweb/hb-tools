@@ -4,7 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createSqliteClient } from './db.js'
-import { loadProcessesWith, hydrateWith, cronWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith, rollingHydrationWith, stopOperation, getActiveOperations } from './fn.js'
+import { loadProcessesWith, hydrateWith, cronWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith, rollingHydrationWith, getActiveOperations } from './fn.js'
 import { resolveUnpushedWith, readRepushesWith } from './fn-legacy.js'
 
 const __filename = fileURLToPath(import.meta.url);
@@ -122,13 +122,14 @@ app.post('/api/refresh-status', async (req, res) => {
 app.get('/api/processes', async (req, res) => {
   try {
     const pidsParam = req.query.pids as string | undefined
+    const queryParam = req.query.query as string | undefined
     let result
 
     if (pidsParam) {
       const processIds = pidsParam.split(',').map(id => id.trim())
-      result = await readProcesses({ processes: processIds })
+      result = await readProcesses({ processes: processIds, query: queryParam })
     } else {
-      result = await readProcesses({})
+      result = await readProcesses({ query: queryParam })
     }
 
     res.json(result)
@@ -174,20 +175,6 @@ app.get('/api/processes', async (req, res) => {
       res.json({ success: true, operationId, message: 'Started rolling hydration for NOPROGRESS processes' })
     } catch (error) {
       console.error('Error starting rolling hydration:', error)
-      res.status(500).json({ error: (error as Error).message })
-    }
-  })
-
-  app.post('/api/stop-rolling-hydration', async (req, res) => {
-    try {
-      const { operationId } = req.body
-      if (!operationId) {
-        return res.status(400).json({ error: 'operationId is required' })
-      }
-      const stopped = stopOperation(operationId)
-      res.json({ success: stopped, operationId, message: stopped ? 'Operation stopped' : 'Operation not found' })
-    } catch (error) {
-      console.error('Error stopping rolling hydration:', error)
       res.status(500).json({ error: (error as Error).message })
     }
   })
