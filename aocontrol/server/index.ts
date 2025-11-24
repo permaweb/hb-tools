@@ -123,13 +123,21 @@ app.get('/api/processes', async (req, res) => {
   try {
     const pidsParam = req.query.pids as string | undefined
     const queryParam = req.query.query as string | undefined
+    const limitParam = req.query.limit as string | undefined
+    const cursorParam = req.query.cursor as string | undefined
+
+    const pagination = limitParam ? {
+      limit: parseInt(limitParam, 10),
+      cursor: cursorParam ? parseInt(cursorParam, 10) : undefined
+    } : undefined
+
     let result
 
     if (pidsParam) {
       const processIds = pidsParam.split(',').map(id => id.trim())
-      result = await readProcesses({ processes: processIds, query: queryParam })
+      result = await readProcesses({ processes: processIds, query: queryParam, pagination })
     } else {
-      result = await readProcesses({ query: queryParam })
+      result = await readProcesses({ query: queryParam, pagination })
     }
 
     res.json(result)

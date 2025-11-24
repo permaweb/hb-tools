@@ -29,6 +29,16 @@ export interface Repush {
   timestamp: number
 }
 
+export interface PaginationOptions {
+  limit?: number
+  cursor?: number  // timestamp cursor
+}
+
+export interface ProcessWithTimestamp {
+  processId: string
+  timestamp: number
+}
+
 export interface SqliteClient {
   query: (statement: SqlStatement) => Promise<any[]>
   run: (statement: SqlStatement) => Promise<Database.RunResult>
@@ -37,8 +47,10 @@ export interface SqliteClient {
   saveProcess: (processId: string, timestamp?: number) => Promise<Database.RunResult>
   saveHydration: (processId: string, url: string, status: string, timestamp?: number) => Promise<Database.RunResult>
   saveRepush: (processId: string, messageId: string, status: string, reason?: string, timestamp?: number) => Promise<Database.RunResult>
-  getAllProcessIds: () => Promise<string[]>
-  getProcessIdsByQuery: (query: string) => Promise<string[]>
+  getAllProcessIds: (pagination?: PaginationOptions) => Promise<string[]>
+  getProcessIdsByQuery: (query: string, pagination?: PaginationOptions) => Promise<string[]>
+  getAllProcessesWithTimestamp: (pagination?: PaginationOptions) => Promise<ProcessWithTimestamp[]>
+  getProcessesByQueryWithTimestamp: (query: string, pagination?: PaginationOptions) => Promise<ProcessWithTimestamp[]>
   getHydrationsByProcessId: (processId: string, query?: string) => Promise<Hydration[]>
   getRepushes: () => Promise<Repush[]>
   getStatusCounts: () => Promise<Record<string, number>>
@@ -129,17 +141,85 @@ export async function createSqliteClient ({ url }: SqliteClientConfig): Promise<
         'INSERT OR REPLACE INTO repushes (processId, messageId, status, reasons, timestamp) VALUES (?, ?, ?, ?, ?)'
       ).run(processId, messageId, status, reason, timestamp)
     },
-    getAllProcessIds: async () => {
-      const rows = db.prepare('SELECT processId FROM processes').all() as { processId: string }[]
-      return rows.map(row => row.processId)
-    },
-    getProcessIdsByQuery: async (query: string) => {
-      // Build OR clause for all queryable fields
-      const conditions = QUERYABLE_HYDRATION_FIELDS.map(field => `${field} = ?`).join(' OR ')
-      const sql = `SELECT DISTINCT processId FROM hydrations WHERE ${conditions}`
-      const params = QUERYABLE_HYDRATION_FIELDS.map(() => query)
+    getAllProcessIds: async (pagination?: PaginationOptions) => {
+      let sql = 'SELECT processId FROM processes'
+      const params: any[] = []
+
+      if (pagination?.cursor) {
+        sql += ' WHERE timestamp > ?'
+        params.push(pagination.cursor)
+      }
+
+      sql += ' ORDER BY timestamp'
+
+      if (pagination?.limit !== undefined) {
+        sql += ` LIMIT ${pagination.limit}`
+      }
+
       const rows = db.prepare(sql).all(...params) as { processId: string }[]
       return rows.map(row => row.processId)
+    },
+    getProcessIdsByQuery: async (query: string, pagination?: PaginationOptions) => {
+      // Build OR clause for all queryable fields
+      const conditions = QUERYABLE_HYDRATION_FIELDS.map(field => `${field} = ?`).join(' OR ')
+      let sql = `SELECT DISTINCT p.processId
+                 FROM hydrations h
+                 JOIN processes p ON h.processId = p.processId
+                 WHERE ${conditions}`
+      const params: any[] = QUERYABLE_HYDRATION_FIELDS.map(() => query)
+
+      if (pagination?.cursor) {
+        sql += ' AND p.timestamp > ?'
+        params.push(pagination.cursor)
+      }
+
+      sql += ' ORDER BY p.timestamp'
+
+      if (pagination?.limit !== undefined) {
+        sql += ` LIMIT ${pagination.limit}`
+      }
+
+      const rows = db.prepare(sql).all(...params) as { processId: string }[]
+      return rows.map(row => row.processId)
+    },
+    getAllProcessesWithTimestamp: async (pagination?: PaginationOptions) => {
+      let sql = 'SELECT processId, timestamp FROM processes'
+      const params: any[] = []
+
+      if (pagination?.cursor) {
+        sql += ' WHERE timestamp > ?'
+        params.push(pagination.cursor)
+      }
+
+      sql += ' ORDER BY timestamp'
+
+      if (pagination?.limit !== undefined) {
+        sql += ` LIMIT ${pagination.limit}`
+      }
+
+      return db.prepare(sql).all(...params) as ProcessWithTimestamp[]
+    },
+    getProcessesByQueryWithTimestamp: async (query: string, pagination?: PaginationOptions) => {
+      // Build OR clause for all queryable fields
+      const conditions = QUERYABLE_HYDRATION_FIELDS.map(field => `${field} = ?`).join(' OR ')
+      let sql = `SELECT DISTINCT p.processId, p.timestamp
+                 FROM hydrations h
+                 JOIN processes p ON h.processId = p.processId
+                 WHERE ${conditions}`
+      const params: any[] = QUERYABLE_HYDRATION_FIELDS.map(() => query)
+
+      if (pagination?.cursor) {
+        sql += ' AND p.timestamp > ?'
+        params.push(pagination.cursor)
+      }
+
+      sql += ' ORDER BY p.timestamp'
+
+      if (pagination?.limit !== undefined) {
+        sql += ` LIMIT ${pagination.limit}`
+      }
+
+      return db.prepare(sql).all(...params) as ProcessWithTimestamp[]
     },
     getHydrationsByProcessId: async (processId: string, query?: string) => {
       if (query) {

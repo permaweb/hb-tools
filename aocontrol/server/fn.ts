@@ -1,4 +1,4 @@
-import { SqliteClient, Hydration } from './db.js'
+import { SqliteClient, Hydration, PaginationOptions, ProcessWithTimestamp } from './db.js'
 import { TokenHydrator } from './hydrator/hydrator.js'
 import { ErrorHandler } from './hydrator/errors.js'
 import { Logger } from './hydrator/logger.js'
@@ -32,7 +32,8 @@ type Processes = {
     processes: string[],
     hydrations?: {
         [key: string]: Hydration[]
-    }
+    },
+    nextCursor?: number
 }
 
 // Initialize TokenHydrator once at the top
@@ -68,6 +69,61 @@ const hydrator = new TokenHydrator(
     logger,
     errorHandler
 )
+
+export const readProcessesWith = ({ db }: Deps) => {
+    return async ({ processes, query, pagination }: { processes?: string[], query?: string, pagination?: PaginationOptions } = {}): Promise<Processes> => {
+        let processesWithTimestamp: ProcessWithTimestamp[]
+
+        if (processes && processes.length > 0) {
+            const hydrations: { [key: string]: Hydration[] } = {}
+            const filteredProcesses: string[] = []
+
+            for (const processId of processes) {
+                const rows = await db.getHydrationsByProcessId(processId, query)
+
+                if (rows.length > 0) {
+                    hydrations[processId] = rows
+                    filteredProcesses.push(processId)
+                }
+            }
+
+            return {
+                processes: filteredProcesses,
+                hydrations: Object.keys(hydrations).length > 0 ? hydrations : undefined
+            }
+        } else if (query) {
+            processesWithTimestamp = await db.getProcessesByQueryWithTimestamp(query, pagination)
+        } else {
+            processesWithTimestamp = await db.getAllProcessesWithTimestamp(pagination)
+        }
+
+        const hydrations: { [key: string]: Hydration[] } = {}
+        const filteredProcesses: string[] = []
+
+        for (const process of processesWithTimestamp) {
+            const rows = await db.getHydrationsByProcessId(process.processId, query)
+
+            if (rows.length > 0) {
+                hydrations[process.processId] = rows
+                filteredProcesses.push(process.processId)
+            }
+        }
+
+        const result: Processes = {
+            processes: filteredProcesses,
+            hydrations: Object.keys(hydrations).length > 0 ? hydrations : undefined
+        }
+
+        if (pagination?.limit !== undefined && processesWithTimestamp.length > 0) {
+            if (processesWithTimestamp.length === pagination.limit) {
+                const lastProcess = processesWithTimestamp[processesWithTimestamp.length - 1]
+                result.nextCursor = lastProcess.timestamp
+            }
+        }
+
+        return result
+    }
+}
 
 export const loadProcessesWith = ({ db }: Deps) => {
     return async ({ processes, hydrations }: Processes) => {
@@ -110,40 +166,6 @@ const startCron = async ({ id, url, db }: { id: string, url: string, db: SqliteC
         }).catch(async (e) => {
             return null
         })
-}
-
-export const readProcessesWith = ({ db }: Deps) => {
-    return async ({ processes, query }: { processes?: string[], query?: string } = {}): Promise<Processes> => {
-        let processIds: string[]
-
-        // Determine which processes to query
-        if (processes && processes.length > 0) {
-            processIds = processes
-        } else if (query) {
-            // If query filter is provided and no specific processes, get all processes matching the query
-            processIds = await db.getProcessIdsByQuery(query)
-        } else {
-            // No filters, get all processes
-            processIds = await db.getAllProcessIds()
-        }
-
-        const hydrations: { [key: string]: Hydration[] } = {}
-        const filteredProcesses: string[] = []
-
-        for (const processId of processIds) {
-            const rows = await db.getHydrationsByProcessId(processId, query)
-
-            if (rows.length > 0) {
-                hydrations[processId] = rows
-                filteredProcesses.push(processId)
-            }
-        }
-
-        return {
-            processes: filteredProcesses,
-            hydrations: Object.keys(hydrations).length > 0 ? hydrations : undefined
-        }
-    }
 }
 
 export const hydrateWith = ({ db }: Deps) => {

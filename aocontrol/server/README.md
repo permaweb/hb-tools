@@ -43,6 +43,17 @@ curl "http://localhost:3001/api/processes?query=https://push.forward.computer"
 
 curl "http://localhost:3001/api/processes?pids=wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0&query=https://push.forward.computer"
 
+# Pagination - get first 10 processes
+# Response includes nextCursor if more results exist
+curl "http://localhost:3001/api/processes?limit=10"
+
+# Pagination - get next 10 processes using cursor from previous response
+# If nextCursor is absent in response, you've reached the end
+curl "http://localhost:3001/api/processes?limit=10&cursor=1234567890"
+
+# Pagination with query filter
+curl "http://localhost:3001/api/processes?query=https://push.forward.computer&limit=10"
+
 curl http://localhost:3001/api/summary
 
 curl -X POST http://localhost:3001/api/clean-bad-procs
