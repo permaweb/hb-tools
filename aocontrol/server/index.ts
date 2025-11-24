@@ -149,9 +149,20 @@ app.get('/api/processes', async (req, res) => {
   }
 })
 
-  app.get('/api/repushes', async (_req, res) => {
+  app.get('/api/repushes', async (req, res) => {
     try {
-      const result = await readRepushes()
+      const queryParam = req.query.query as string | undefined
+      const limitParam = req.query.limit as string | undefined
+      const cursorParam = req.query.cursor as string | undefined
+
+      // Default limit is 100
+      const limit = limitParam ? parseInt(limitParam, 10) : 100
+      const pagination = {
+        limit: limit,
+        cursor: cursorParam ? parseInt(cursorParam, 10) : undefined
+      }
+
+      const result = await readRepushes({ query: queryParam, pagination })
       res.json(result)
     } catch (error) {
       console.error('Error reading repushes:', error)

@@ -1,5 +1,6 @@
 
 import { Deps } from './fn'
+import { PaginationOptions } from './db.js'
 import { missingNonceReport } from './repusher/pushIssues.js'
 import { pushMu } from './repusher/pushMu.js'
 
@@ -63,8 +64,19 @@ export const resolveUnpushedWith = ({ db }: Deps) => {
 }
 
 export const readRepushesWith = ({ db }: Deps) => {
-    return async () => {
-        const repushes = await db.getRepushes()
-        return { repushes }
+    return async ({ query, pagination }: { query?: string, pagination?: PaginationOptions } = {}) => {
+        const repushes = await db.getRepushes(query, pagination)
+
+        const result: { repushes: typeof repushes, nextCursor?: number } = { repushes }
+
+        // Add nextCursor only if we got a full page (indicating more results may exist)
+        if (pagination?.limit !== undefined && repushes.length > 0) {
+            if (repushes.length === pagination.limit) {
+                const lastRepush = repushes[repushes.length - 1]
+                result.nextCursor = lastRepush.timestamp
+            }
+        }
+
+        return result
     }
 }

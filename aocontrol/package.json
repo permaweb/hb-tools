@@ -6,7 +6,6 @@
 	"license": "ISC",
 	"scripts": {
 		"dev:backend": "nodemon --exec tsx server/index.ts",
-		"cli": "tsx server/cli.ts",
 		"start": "NODE_ENV=production tsx server/index.ts"
 	},
 	"dependencies": {

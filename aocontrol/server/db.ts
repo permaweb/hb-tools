@@ -21,6 +21,9 @@ export interface Hydration {
 // Define queryable fields for filtering hydrations
 export const QUERYABLE_HYDRATION_FIELDS = ['url'] as const
 
+// Define queryable fields for filtering repushes
+export const QUERYABLE_REPUSH_FIELDS = ['messageId'] as const
+
 export interface Repush {
   processId: string
   messageId: string
@@ -52,7 +55,7 @@ export interface SqliteClient {
   getAllProcessesWithTimestamp: (pagination?: PaginationOptions) => Promise<ProcessWithTimestamp[]>
   getProcessesByQueryWithTimestamp: (query: string, pagination?: PaginationOptions) => Promise<ProcessWithTimestamp[]>
   getHydrationsByProcessId: (processId: string, query?: string) => Promise<Hydration[]>
-  getRepushes: () => Promise<Repush[]>
+  getRepushes: (query?: string, pagination?: PaginationOptions) => Promise<Repush[]>
   getStatusCounts: () => Promise<Record<string, number>>
   getRepushStatusCounts: () => Promise<Record<string, number>>
   deleteProcess: (processId: string) => Promise<Database.RunResult>
@@ -233,9 +236,29 @@ export async function createSqliteClient ({ url }: SqliteClientConfig): Promise<
       const rows = db.prepare('SELECT url, status FROM hydrations WHERE processId = ?').all(processId) as Hydration[]
       return rows
     },
-    getRepushes: async () => {
-      const rows = db.prepare('SELECT processId, messageId, status, reasons, timestamp FROM repushes ORDER BY timestamp DESC').all() as Repush[]
-      return rows
+    getRepushes: async (query?: string, pagination?: PaginationOptions) => {
+      let sql = 'SELECT processId, messageId, status, reasons, timestamp FROM repushes'
+      const params: any[] = []
+
+      if (query) {
+        // Build OR clause for all queryable fields
+        const conditions = QUERYABLE_REPUSH_FIELDS.map(field => `${field} = ?`).join(' OR ')
+        sql += ` WHERE ${conditions}`
+        params.push(...QUERYABLE_REPUSH_FIELDS.map(() => query))
+      }
+
+      if (pagination?.cursor) {
+        sql += query ? ' AND timestamp > ?' : ' WHERE timestamp > ?'
+        params.push(pagination.cursor)
+      }
+
+      sql += ' ORDER BY timestamp'
+
+      if (pagination?.limit !== undefined) {
+        sql += ` LIMIT ${pagination.limit}`
+      }
+
+      return db.prepare(sql).all(...params) as Repush[]
     },
     getStatusCounts: async () => {
       const rows = db.prepare('SELECT status, COUNT(*) as count FROM hydrations GROUP BY status').all() as Array<{ status: string, count: number }>

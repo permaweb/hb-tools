@@ -22,6 +22,16 @@ curl "http://localhost:3001/api/processes?limit=10&cursor=1234567890"
 curl "http://localhost:3001/api/processes?query=https://push.forward.computer&limit=10"
 
 curl http://localhost:3001/api/summary
+
+# Repushes - default limit is 100
+curl http://localhost:3001/api/repushes
+
+# Search repushes by txid (messageId)
+curl "http://localhost:3001/api/repushes?query=14AWd4r_Spgfgg83LlWQQ4pA3EC2pjLhRqz23Z6tv94"
+
+# Pagination with repushes
+curl "http://localhost:3001/api/repushes?limit=10"
+curl "http://localhost:3001/api/repushes?limit=10&cursor=1234567890"
 ```
 
 # server functions
@@ -67,8 +77,6 @@ curl -X POST http://localhost:3001/api/resolve-unpushed \
       -d '{
         "txs": ["14AWd4r_Spgfgg83LlWQQ4pA3EC2pjLhRqz23Z6tv94"]
       }'
-
-curl http://localhost:3001/api/repushes
 
 curl -X POST http://localhost:3001/api/rolling-hydration
 
