@@ -1,0 +1,17 @@
+{
+    "0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc": {"host": "https://state.forward.computer", "ticker": "AO"},
+    "4hXj_E-5fAKmo4E8KjgQvuDJKAFk9P2grhycVmISDLs": {"host": "https://state-1.forward.computer", "ticker": "PI"},
+    "s6jcB3ctSbiDNwR-paJgy5iOAhahXahLul8exSLHbGE": {"host": "https://state-1.forward.computer", "ticker": "GAME"},
+    "DM3FoZUq_yebASPhgd8pEIRIzDW6muXEhxz5-JwbZwo": {"host": "https://state-1.forward.computer"},
+    "K59Wi9uKXBQfTn3zw7L_t-lwHAoq3Fx-V9sCyOY3dFE": {"host": "https://state-1.forward.computer", "ticker": "SMONEY"},
+    "7GoQfmSOct_aUOWKM4xbKGg6DzAmOgdKwg8Kf-CbHm4": {"host": "https://state-1.forward.computer", "ticker": "WNDR"},
+    "Jc2bcfEbwHFQ-qY4jqm8L5hc-SggeVA1zlW6DOICWgo": {"host": "https://state-1.forward.computer", "ticker": "PL"},
+    "n2MhPK0O3yEvY2zW73sqcmWqDktJxAifJDrri4qireI": {"host": "https://state-1.forward.computer", "ticker": "LQD"},
+    "OiNYKJ16jP7uj7z0DJO7JZr9ClfioGacpItXTn9fKn8": {"host": "https://state-1.forward.computer", "ticker": "ACTION"},
+	"Nx-_Ichdp-9uO_ZKg2DLWPiRlg-DWrSa2uGvINxOjaE": {"host": "https://state-1.forward.computer", "ticker": "BOTEGA"},
+    "qjOMZnan8Vo2gaLaOF1FXbFXOQOn_5sKbYspNSVRyNY": {"host": "https://push-1.forward.computer", "type": "oracle"},
+    "5q8vpzC5QAKOAJFM26MAKfZw1gwtw7WA_J2861ZiKhI": {"host": "https://push-2.forward.computer", "type": "oracle"},
+	"wJV8FMkpoeLsTjJ6O7YZEuQgMqj-sDjPHhTeA73RsCc": {"host": "https://push-2.forward.computer", "type": "oracle"},
+    "gx_jKk-hy8-sB4Wv5WEuvTTVyIRWW3We7rRHthcohBQ": {"host": "https://state-1.forward.computer", "ticker": "LOAD"},
+    "qNvAoz0TgcH7DMg8BCVn8jF32QH5L6T29VjHxhHqqGE": { "host": "https://state-2.forward.computer"}
+}
