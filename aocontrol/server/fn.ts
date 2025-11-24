@@ -103,6 +103,15 @@ const startHydration = async ({ id, url, db }: { id: string, url: string, db: Sq
         })
 }
 
+const startCron = async ({ id, url, db }: { id: string, url: string, db: SqliteClient }) => {
+    await hydrator.triggerCron(id, 'every', url)
+        .then(async (res) => {
+            return res
+        }).catch(async (e) => {
+            return null
+        })
+}
+
 export const readProcessesWith = ({ db }: Deps) => {
     return async ({ processes }: { processes?: string[] } = {}): Promise<Processes> => {
         if (processes && processes.length > 0) {
@@ -152,6 +161,20 @@ export const hydrateWith = ({ db }: Deps) => {
                     }
 
                     startHydration({ id: processId, url: hydration.url, db }).then(() => {})
+                }
+            }
+        }
+    }
+}
+
+export const cronWith = ({ db }: Deps) => {
+    return async ({ processes }: Processes) => {
+        for (const processId of processes) {
+            const hydrations = await db.getHydrationsByProcessId(processId)
+
+            if (hydrations.length > 0) {
+                for (const hydration of hydrations) {
+                    startCron({ id: processId, url: hydration.url, db }).then(() => {})
                 }
             }
         }

@@ -4,7 +4,7 @@ import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createSqliteClient } from './db.js'
-import { loadProcessesWith, hydrateWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith, rollingHydrationWith, stopOperation, getActiveOperations } from './fn.js'
+import { loadProcessesWith, hydrateWith, cronWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith, rollingHydrationWith, stopOperation, getActiveOperations } from './fn.js'
 import { resolveUnpushedWith, readRepushesWith } from './fn-legacy.js'
 
 const __filename = fileURLToPath(import.meta.url);
@@ -27,6 +27,7 @@ async function startServer() {
 
   const loadProcesses = loadProcessesWith({ db })
   const hydrate = hydrateWith({ db })
+  const cron = cronWith({ db })
   const refreshStatus = refreshStatusWith({ db })
   const readProcesses = readProcessesWith({ db })
   const summary = summaryWith({ db })
@@ -68,6 +69,29 @@ app.post('/api/hydrate', async (req, res) => {
     res.json({ success: true, message: `Started hydration for ${processIds.length} processes` })
   } catch (error) {
     console.error('Error starting hydration:', error)
+    res.status(500).json({ error: (error as Error).message })
+  }
+})
+
+app.post('/api/cron', async (req, res) => {
+  try {
+    const { processes } = req.body
+    let processIds: string[]
+
+    if (processes && Array.isArray(processes)) {
+      processIds = processes
+    } else {
+      const allProcesses = await readProcesses({})
+      processIds = allProcesses.processes
+    }
+
+    cron({ processes: processIds }).catch(err => {
+      console.error('Cron error:', err)
+    })
+
+    res.json({ success: true, message: `Started cron for ${processIds.length} processes` })
+  } catch (error) {
+    console.error('Error starting cron:', error)
     res.status(500).json({ error: (error as Error).message })
   }
 })

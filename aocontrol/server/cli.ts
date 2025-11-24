@@ -4,6 +4,7 @@ import { createSqliteClient } from './db.js'
 import {
   loadProcessesWith,
   hydrateWith,
+  cronWith,
   refreshStatusWith,
   readProcessesWith,
   summaryWith,
@@ -46,6 +47,7 @@ async function main() {
 
   const loadProcesses = loadProcessesWith({ db })
   const hydrate = hydrateWith({ db })
+  const cron = cronWith({ db })
   const refreshStatus = refreshStatusWith({ db })
   const readProcesses = readProcessesWith({ db })
   const summary = summaryWith({ db })
@@ -86,6 +88,18 @@ async function main() {
     }
 
     await hydrate({ processes: processIds })
+  } else if (action === 'cron') {
+    const pidsParam = args.pids
+    let processIds: string[]
+
+    if (pidsParam) {
+      processIds = pidsParam.split(',').map(id => id.trim())
+    } else {
+      const allProcesses = await readProcesses({})
+      processIds = allProcesses.processes
+    }
+
+    await cron({ processes: processIds })
   } else if (action === 'read') {
     const pidsParam = args.pids
     let result
