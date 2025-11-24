@@ -43,6 +43,9 @@ curl "http://localhost:3001/api/processes?query=https://push.forward.computer"
 
 curl "http://localhost:3001/api/processes?pids=wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0&query=https://push.forward.computer"
 
+# Pagination - default limit is 100
+curl "http://localhost:3001/api/processes"
+
 # Pagination - get first 10 processes
 # Response includes nextCursor if more results exist
 curl "http://localhost:3001/api/processes?limit=10"

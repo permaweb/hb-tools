@@ -126,10 +126,12 @@ app.get('/api/processes', async (req, res) => {
     const limitParam = req.query.limit as string | undefined
     const cursorParam = req.query.cursor as string | undefined
 
-    const pagination = limitParam ? {
-      limit: parseInt(limitParam, 10),
+    // Default limit is 100
+    const limit = limitParam ? parseInt(limitParam, 10) : 100
+    const pagination = {
+      limit: limit,
       cursor: cursorParam ? parseInt(cursorParam, 10) : undefined
-    } : undefined
+    }
 
     let result
 
