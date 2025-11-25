@@ -21,7 +21,7 @@ npm run cli -- --action resolve-unpushed --txs tx1,tx2,tx3
 ```sh
 npm run dev:backend
 
-curl -X POST http://localhost:3001/api/load \
+curl -X POST https://aocontrol.forward.computer/api/load \
     -H "Content-Type: application/json" \
     -d '{
       "processes": ["wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0"],
