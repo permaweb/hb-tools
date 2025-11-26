@@ -38,8 +38,12 @@ curl "http://localhost:3001/api/repushes?limit=10&cursor=1234567890"
 ```sh
 npm run dev:backend
 
+# Set your auth token (use ADMIN_TOKEN from .env or a user token)
+TOKEN="your_auth_token_here"
+
 curl -X POST http://localhost:3001/api/load \
     -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN" \
     -d '{
       "processes": ["wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0"],
       "hydrations": {
@@ -54,31 +58,39 @@ curl -X POST http://localhost:3001/api/load \
 
 curl -X POST http://localhost:3001/api/refresh-status \
     -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN" \
     -d '{
       "processes": ["wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0"]
     }'
 
 curl -X POST http://localhost:3001/api/hydrate \
     -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN" \
     -d '{
       "processes": ["wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0"]
     }'
 
 curl -X POST http://localhost:3001/api/cron \
     -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN" \
     -d '{
       "processes": ["wHA9yct1yxYFDCeI1PBJuWGnJKl3yk3QJib4Lf4qkU0"]
     }'
 
-curl -X POST http://localhost:3001/api/clean-bad-procs
+curl -X POST http://localhost:3001/api/clean-bad-procs \
+    -H "Authorization: Bearer $TOKEN" \
+    -d '{"processes": []}'
 
 curl -X POST http://localhost:3001/api/resolve-unpushed \
-      -H "Content-Type: application/json" \
-      -d '{
-        "txs": ["14AWd4r_Spgfgg83LlWQQ4pA3EC2pjLhRqz23Z6tv94"]
-      }'
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer $TOKEN" \
+    -d '{
+      "txs": ["14AWd4r_Spgfgg83LlWQQ4pA3EC2pjLhRqz23Z6tv94"]
+    }'
 
-curl -X POST http://localhost:3001/api/rolling-hydration
+curl -X POST http://localhost:3001/api/rolling-hydration \
+    -H "Authorization: Bearer $TOKEN" \
+    -d '{"processes": []}'
 
 curl http://localhost:3001/api/operations
 ```
