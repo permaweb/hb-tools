@@ -42,7 +42,7 @@ const logger = new Logger({
     format: 'simple',
     colors: false,
     showTimestamp: true,
-    fileOutput: './data/logs/hydrator.log'
+    fileOutput: '~/hydrator.log'
 })
 
 const errorHandler = new ErrorHandler(logger)

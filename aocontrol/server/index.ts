@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import { createSqliteClient } from './db.js'
 import { loadProcessesWith, hydrateWith, cronWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith, rollingHydrationWith, getActiveOperations } from './fn.js'
 import { resolveUnpushedWith, readRepushesWith } from './fn-legacy.js'
+import { authRequestWith } from './auth.ts'
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,6 +26,7 @@ async function startServer() {
     url: process.env.DATABASE_PATH
   })
 
+  const authRequest = authRequestWith({ db })
   const loadProcesses = loadProcessesWith({ db })
   const hydrate = hydrateWith({ db })
   const cron = cronWith({ db })
@@ -38,6 +40,12 @@ async function startServer() {
 
   app.post('/api/load', async (req, res) => {
   try {
+    // Auth check
+    const auth = await authRequest(req)
+    if (!auth.authorized) {
+      return res.status(401).json({ error: auth.error })
+    }
+
     const { processes, hydrations } = req.body
     if (!processes || !Array.isArray(processes)) {
       return res.status(400).json({ error: 'processes array is required' })
@@ -52,6 +60,12 @@ async function startServer() {
 
 app.post('/api/hydrate', async (req, res) => {
   try {
+    // Auth check
+    const auth = await authRequest(req)
+    if (!auth.authorized) {
+      return res.status(401).json({ error: auth.error })
+    }
+
     const { processes } = req.body
     let processIds: string[]
 
@@ -75,6 +89,12 @@ app.post('/api/hydrate', async (req, res) => {
 
 app.post('/api/cron', async (req, res) => {
   try {
+    // Auth check
+    const auth = await authRequest(req)
+    if (!auth.authorized) {
+      return res.status(401).json({ error: auth.error })
+    }
+
     const { processes } = req.body
     let processIds: string[]
 
@@ -98,6 +118,12 @@ app.post('/api/cron', async (req, res) => {
 
 app.post('/api/refresh-status', async (req, res) => {
   try {
+    // Auth check
+    const auth = await authRequest(req)
+    if (!auth.authorized) {
+      return res.status(401).json({ error: auth.error })
+    }
+
     const { processes } = req.body
     let processIds: string[]
 
@@ -180,8 +206,14 @@ app.get('/api/processes', async (req, res) => {
     }
   })
 
-  app.post('/api/clean-bad-procs', async (_req, res) => {
+  app.post('/api/clean-bad-procs', async (req, res) => {
     try {
+      // Auth check
+      const auth = await authRequest(req)
+      if (!auth.authorized) {
+        return res.status(401).json({ error: auth.error })
+      }
+
       const result = await cleanBadProcs()
       res.json(result)
     } catch (error) {
@@ -190,8 +222,14 @@ app.get('/api/processes', async (req, res) => {
     }
   })
 
-  app.post('/api/rolling-hydration', async (_req, res) => {
+  app.post('/api/rolling-hydration', async (req, res) => {
     try {
+      // Auth check
+      const auth = await authRequest(req)
+      if (!auth.authorized) {
+        return res.status(401).json({ error: auth.error })
+      }
+
       const operationId = await rollingHydration()
       res.json({ success: true, operationId, message: 'Started rolling hydration for NOPROGRESS processes' })
     } catch (error) {
@@ -212,6 +250,12 @@ app.get('/api/processes', async (req, res) => {
 
   app.post('/api/resolve-unpushed', async (req, res) => {
     try {
+      // Auth check
+      const auth = await authRequest(req)
+      if (!auth.authorized) {
+        return res.status(401).json({ error: auth.error })
+      }
+
       const { txs } = req.body
       if (!txs || !Array.isArray(txs)) {
         return res.status(400).json({ error: 'txs array is required' })

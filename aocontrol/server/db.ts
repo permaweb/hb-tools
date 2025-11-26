@@ -32,6 +32,21 @@ export interface Repush {
   timestamp: number
 }
 
+export interface AuthToken {
+  id?: number
+  token: string
+  type: string
+  timestamp: number
+}
+
+export interface Permission {
+  id?: number
+  token: string
+  processId: string
+  label: string
+  timestamp: number
+}
+
 export interface PaginationOptions {
   limit?: number
   cursor?: number  // timestamp cursor
@@ -50,6 +65,10 @@ export interface SqliteClient {
   saveProcess: (processId: string, timestamp?: number) => Promise<Database.RunResult>
   saveHydration: (processId: string, url: string, status: string, timestamp?: number) => Promise<Database.RunResult>
   saveRepush: (processId: string, messageId: string, status: string, reason?: string, timestamp?: number) => Promise<Database.RunResult>
+  saveAuthToken: (token: string, type: string, timestamp?: number) => Promise<Database.RunResult>
+  savePermission: (token: string, processId: string, label: string, timestamp?: number) => Promise<Database.RunResult>
+  getAuthToken: (token: string) => Promise<AuthToken | undefined>
+  getPermissionsByToken: (token: string) => Promise<Permission[]>
   getAllProcessIds: (pagination?: PaginationOptions) => Promise<string[]>
   getProcessIdsByQuery: (query: string, pagination?: PaginationOptions) => Promise<string[]>
   getAllProcessesWithTimestamp: (pagination?: PaginationOptions) => Promise<ProcessWithTimestamp[]>
@@ -95,6 +114,29 @@ const createRepushes = async (db: SqliteDatabase): Promise<Database.RunResult> =
   );`
 ).run()
 
+const createAuthTokens = async (db: SqliteDatabase): Promise<Database.RunResult> => db.prepare(
+  `CREATE TABLE IF NOT EXISTS auth_token(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT NOT NULL,
+    type TEXT NOT NULL CHECK(type IN ('ADMIN', 'USER')),
+    timestamp INTEGER NOT NULL,
+    UNIQUE(token)
+  );`
+).run()
+
+const createPermissions = async (db: SqliteDatabase): Promise<Database.RunResult> => db.prepare(
+  `CREATE TABLE IF NOT EXISTS permissions(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    token TEXT NOT NULL,
+    processId TEXT NOT NULL,
+    label TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    UNIQUE(token, processId),
+    FOREIGN KEY (token) REFERENCES auth_token(token) ON DELETE CASCADE,
+    FOREIGN KEY (processId) REFERENCES processes(processId) ON DELETE CASCADE
+  );`
+).run()
+
 export async function createSqliteClient ({ url }: SqliteClientConfig): Promise<SqliteClient> {
   // Create directory if it doesn't exist
   const dbDir = dirname(url)
@@ -115,14 +157,18 @@ export async function createSqliteClient ({ url }: SqliteClientConfig): Promise<
       .then(() => createProcesses(db))
       .then(() => createHydrations(db))
       .then(() => createRepushes(db))
+      .then(() => createAuthTokens(db))
+      .then(() => createPermissions(db))
   } else {
     await Promise.resolve()
       .then(() => createProcesses(db))
       .then(() => createHydrations(db))
       .then(() => createRepushes(db))
+      .then(() => createAuthTokens(db))
+      .then(() => createPermissions(db))
   }
 
-  return {
+  const client = {
     query: async ({ sql, parameters }: SqlStatement) => db.prepare(sql).all(...parameters),
     run: async ({ sql, parameters }: SqlStatement) => db.prepare(sql).run(...parameters),
     transaction: async (statements: SqlStatement[]) => db.transaction(
@@ -143,6 +189,28 @@ export async function createSqliteClient ({ url }: SqliteClientConfig): Promise<
       return db.prepare(
         'INSERT OR REPLACE INTO repushes (processId, messageId, status, reasons, timestamp) VALUES (?, ?, ?, ?, ?)'
       ).run(processId, messageId, status, reason, timestamp)
+    },
+    saveAuthToken: async (token: string, type: string, timestamp: number = Date.now()) => {
+      return db.prepare(
+        'INSERT OR IGNORE INTO auth_token (token, type, timestamp) VALUES (?, ?, ?)'
+      ).run(token, type, timestamp)
+    },
+    savePermission: async (token: string, processId: string, label: string, timestamp: number = Date.now()) => {
+      return db.prepare(
+        'INSERT OR REPLACE INTO permissions (token, processId, label, timestamp) VALUES (?, ?, ?, ?)'
+      ).run(token, processId, label, timestamp)
+    },
+    getAuthToken: async (token: string) => {
+      const result = db.prepare(
+        'SELECT id, token, type, timestamp FROM auth_token WHERE token = ?'
+      ).get(token) as AuthToken | undefined
+      return result
+    },
+    getPermissionsByToken: async (token: string) => {
+      const results = db.prepare(
+        'SELECT id, token, processId, label, timestamp FROM permissions WHERE token = ?'
+      ).all(token) as Permission[]
+      return results
     },
     getAllProcessIds: async (pagination?: PaginationOptions) => {
       let sql = 'SELECT processId FROM processes'
@@ -279,4 +347,30 @@ export async function createSqliteClient ({ url }: SqliteClientConfig): Promise<
     },
     db
   }
+
+  if (process.env.ADMIN_TOKEN) {
+    await client.saveAuthToken(process.env.ADMIN_TOKEN, 'ADMIN')
+    console.log('Admin token initialized')
+  }
+
+  if (process.env.USER_PERMISSIONS) {
+    try {
+      const userPermissions = JSON.parse(process.env.USER_PERMISSIONS) as Record<string, string[]>
+
+      for (const [token, processIds] of Object.entries(userPermissions)) {
+        await client.saveAuthToken(token, 'USER')
+
+        for (const processId of processIds) {
+          await client.saveProcess(processId)
+          await client.savePermission(token, processId, 'RESOLVE_UNPUSHED')
+        }
+
+        console.log(`User token initialized with ${processIds.length} process permissions`)
+      }
+    } catch (error) {
+      console.error('Failed to parse USER_PERMISSIONS:', error)
+    }
+  }
+
+  return client
 }
