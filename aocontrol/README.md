@@ -81,11 +81,11 @@ curl -X POST http://localhost:3001/api/clean-bad-procs \
     -H "Authorization: Bearer $TOKEN" \
     -d '{"processes": []}'
 
-curl -X POST http://localhost:3001/api/resolve-unpushed \
+curl -X POST http://localhost:3005/api/resolve-unpushed \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $TOKEN" \
     -d '{
-      "txs": ["14AWd4r_Spgfgg83LlWQQ4pA3EC2pjLhRqz23Z6tv94"]
+      "txs": ["FBt9A5GA_KXMMSxA2DJ0xZbAq8sLLU2ak-YJe9zDvg8"]
     }'
 
 curl -X POST http://localhost:3001/api/rolling-hydration \
