@@ -202,7 +202,7 @@ export async function missingNonceReport(txs: string[], customCu: boolean): Prom
           messages.push({ 
             messageId, 
             processId, 
-            cu: CUSTOM_CU_MAP[processId] ? CUSTOM_CU_MAP[processId] : 'cu.ao-testnet.xyz'
+            cu: customCu && CUSTOM_CU_MAP[processId] ? CUSTOM_CU_MAP[processId] : 'cu.ao-testnet.xyz'
           })
         }
       } catch (e) {
