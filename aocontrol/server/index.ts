@@ -256,11 +256,11 @@ app.get('/api/processes', async (req, res) => {
         return res.status(401).json({ error: auth.error })
       }
 
-      const { txs } = req.body
+      const { txs, custom } = req.body
       if (!txs || !Array.isArray(txs)) {
         return res.status(400).json({ error: 'txs array is required' })
       }
-      await resolveUnpushed(txs)
+      await resolveUnpushed(txs, custom)
       res.json({ success: true, message: `Resolved unpushed for ${txs.length} transactions` })
     } catch (error) {
       console.error('Error resolving unpushed:', error)

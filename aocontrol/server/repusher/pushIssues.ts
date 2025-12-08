@@ -176,7 +176,11 @@ query GetMessageByTags {
 }
 `
 
-export async function missingNonceReport(txs: string[]): Promise<CheckIfPushedResult> {
+const CUSTOM_CU_MAP: any = {
+  "qNvAoz0TgcH7DMg8BCVn8jF32QH5L6T29VjHxhHqqGE": "cu6201.ao-testnet.xyz"
+}
+
+export async function missingNonceReport(txs: string[], customCu: boolean): Promise<CheckIfPushedResult> {
     const messages: Message[] = []
     const errors: any[] = []
     for(let i = 0; i < txs.length; i++) {
@@ -198,7 +202,7 @@ export async function missingNonceReport(txs: string[]): Promise<CheckIfPushedRe
           messages.push({ 
             messageId, 
             processId, 
-            cu: 'cu.ao-testnet.xyz'
+            cu: CUSTOM_CU_MAP[processId] ? CUSTOM_CU_MAP[processId] : 'cu.ao-testnet.xyz'
           })
         }
       } catch (e) {
