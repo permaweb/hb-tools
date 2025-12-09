@@ -116,7 +116,7 @@ export async function checkIfPushed(messages: Message[]): Promise<CheckIfPushedR
         })
         tagsStr += "]"
         const query = getQuery(tagsStr, target)
-        const gqlResponse: GraphQLResponse = await fetch(`https://ao-search-gateway.goldsky.com/graphql`, {
+        const gqlResponse: GraphQLResponse = await fetch(`https://arweave.net/graphql`, {
           method: "POST",
           body: JSON.stringify({query})
         }).then(res => { return res.json() })
@@ -189,7 +189,7 @@ export async function missingNonceReport(txs: string[], customCu: boolean): Prom
         const messageId = txs[i]
         const query = getQueryById(messageId)
         const body = JSON.stringify({query})
-        const gqlResponse: GraphQLResponse = await fetch(`https://ao-search-gateway.goldsky.com/graphql`, {
+        const gqlResponse: GraphQLResponse = await fetch(`https://arweave.net/graphql`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
