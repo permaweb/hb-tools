@@ -112,11 +112,11 @@ export async function checkIfPushed(messages: Message[]): Promise<CheckIfPushedR
         const tags = pushedMessage.Tags
         let tagsStr = "[\n"
         tags.forEach(t => {
-          tagsStr += `{ name: "${t.name}", values: ["${t.value}"] }\n`
+          tagsStr += `{ name: "${t.name}", values: ["${String(t.value).replace(/"/g, '\\"')}"] }\n`
         })
         tagsStr += "]"
         const query = getQuery(tagsStr, target)
-        const gqlResponse: GraphQLResponse = await fetch(`https://arweave.net/graphql`, {
+        const gqlResponse: GraphQLResponse = await fetch(`https://ao-search-gateway.goldsky.com/graphql`, {
           method: "POST",
           body: JSON.stringify({query})
         }).then(res => { return res.json() })
