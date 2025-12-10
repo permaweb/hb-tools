@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createSqliteClient } from './db.js'
+import { createPostgresClient } from './db.js'
 import { loadProcessesWith, hydrateWith, cronWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith, rollingHydrationWith, getActiveOperations } from './fn.js'
 import { resolveUnpushedWith, readRepushesWith } from './fn-legacy.js'
 import { authRequestWith } from './auth.ts'
@@ -22,7 +22,7 @@ async function startServer() {
     throw new Error('DATABASE_PATH environment variable is required')
   }
 
-  const db = await createSqliteClient({
+  const db = await createPostgresClient({
     url: process.env.DATABASE_PATH
   })
 

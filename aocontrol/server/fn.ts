@@ -1,11 +1,11 @@
-import { SqliteClient, Hydration, PaginationOptions, ProcessWithTimestamp } from './db.js'
+import { DbClient, Hydration, PaginationOptions, ProcessWithTimestamp } from './db.js'
 import { TokenHydrator } from './hydrator/hydrator.js'
 import { ErrorHandler } from './hydrator/errors.js'
 import { Logger } from './hydrator/logger.js'
 import { randomBytes } from 'crypto'
 
 export type Deps = {
-    db: SqliteClient
+    db: DbClient
 }
 
 // Track active rolling hydration operations
@@ -141,7 +141,7 @@ export const loadProcessesWith = ({ db }: Deps) => {
     }
 }
 
-const startHydration = async ({ id, url, db }: { id: string, url: string, db: SqliteClient }) => {
+const startHydration = async ({ id, url, db }: { id: string, url: string, db: DbClient }) => {
     await db.saveHydration(id, url, 'REQUESTSENT')
     await hydrator.hydrateTokens([id], url)
         .then(async (res) => {
@@ -159,7 +159,7 @@ const startHydration = async ({ id, url, db }: { id: string, url: string, db: Sq
         })
 }
 
-const startCron = async ({ id, url, db }: { id: string, url: string, db: SqliteClient }) => {
+const startCron = async ({ id, url, db }: { id: string, url: string, db: DbClient }) => {
     await hydrator.triggerCron(id, 'every', url)
         .then(async (res) => {
             return res
