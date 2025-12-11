@@ -186,7 +186,13 @@ async function createPostgresClient({ url }) {
         "SELECT id, token, processId, label, timestamp FROM permissions WHERE token = $1",
         [token]
       );
-      return result.rows;
+      return result.rows.map((row) => ({
+        id: row.id,
+        token: row.token,
+        processId: row.processid,
+        label: row.label,
+        timestamp: parseInt(row.timestamp)
+      }));
     },
     getAllProcessIds: async (pagination) => {
       let sql = "SELECT processId FROM processes";
@@ -1686,64 +1692,6 @@ var hydrator = new TokenHydrator(
   logger,
   errorHandler
 );
-var readProcessesWith = ({ db: db2 }) => {
-  return async ({ processes, query, pagination } = {}) => {
-    let processesWithTimestamp;
-    if (processes && processes.length > 0) {
-      const hydrations2 = {};
-      const filteredProcesses2 = [];
-      for (const processId of processes) {
-        const rows = await db2.getHydrationsByProcessId(processId, query);
-        if (rows.length > 0) {
-          hydrations2[processId] = rows;
-          filteredProcesses2.push(processId);
-        }
-      }
-      return {
-        processes: filteredProcesses2,
-        hydrations: Object.keys(hydrations2).length > 0 ? hydrations2 : void 0
-      };
-    } else if (query) {
-      processesWithTimestamp = await db2.getProcessesByQueryWithTimestamp(query, pagination);
-    } else {
-      processesWithTimestamp = await db2.getAllProcessesWithTimestamp(pagination);
-    }
-    const hydrations = {};
-    const filteredProcesses = [];
-    for (const process2 of processesWithTimestamp) {
-      const rows = await db2.getHydrationsByProcessId(process2.processId, query);
-      if (rows.length > 0) {
-        hydrations[process2.processId] = rows;
-        filteredProcesses.push(process2.processId);
-      }
-    }
-    const result = {
-      processes: filteredProcesses,
-      hydrations: Object.keys(hydrations).length > 0 ? hydrations : void 0
-    };
-    if (pagination?.limit !== void 0 && processesWithTimestamp.length > 0) {
-      if (processesWithTimestamp.length === pagination.limit) {
-        const lastProcess = processesWithTimestamp[processesWithTimestamp.length - 1];
-        result.nextCursor = lastProcess.timestamp;
-      }
-    }
-    return result;
-  };
-};
-var loadProcessesWith = ({ db: db2 }) => {
-  return async ({ processes, hydrations }) => {
-    for (const processId of processes) {
-      await db2.saveProcess(processId);
-    }
-    if (hydrations) {
-      for (const [processId, hydrationList] of Object.entries(hydrations)) {
-        for (const hydration of hydrationList) {
-          await db2.saveHydration(processId, hydration.url, hydration.status);
-        }
-      }
-    }
-  };
-};
 var startHydration = async ({ id, url, db: db2 }) => {
   await db2.saveHydration(id, url, "REQUESTSENT");
   await hydrator.hydrateTokens([id], url).then(async (res) => {
@@ -1760,42 +1708,6 @@ var startHydration = async ({ id, url, db: db2 }) => {
     return null;
   });
 };
-var startCron = async ({ id, url, db: db2 }) => {
-  await hydrator.triggerCron(id, "every", url).then(async (res) => {
-    return res;
-  }).catch(async (e) => {
-    return null;
-  });
-};
-var hydrateWith = ({ db: db2 }) => {
-  return async ({ processes }) => {
-    for (const processId of processes) {
-      const hydrations = await db2.getHydrationsByProcessId(processId);
-      if (hydrations.length > 0) {
-        for (const hydration of hydrations) {
-          if (!["INIT", "NOPROGRESS", "PROGRESS"].includes(hydration.status)) {
-            continue;
-          }
-          startHydration({ id: processId, url: hydration.url, db: db2 }).then(() => {
-          });
-        }
-      }
-    }
-  };
-};
-var cronWith = ({ db: db2 }) => {
-  return async ({ processes }) => {
-    for (const processId of processes) {
-      const hydrations = await db2.getHydrationsByProcessId(processId);
-      if (hydrations.length > 0) {
-        for (const hydration of hydrations) {
-          startCron({ id: processId, url: hydration.url, db: db2 }).then(() => {
-          });
-        }
-      }
-    }
-  };
-};
 var checkStatus = async ({ id, url }) => {
   const slot = await hydrator.getCurrentSlot(id, url).then((res) => res).catch((_) => 0);
   const nonce = await hydrator.fetchTokenInfo(id).then((res) => res.nonce).catch((_) => 0);
@@ -1810,29 +1722,6 @@ var checkStatus = async ({ id, url }) => {
   }
   return "NOPROGRESS";
 };
-var refreshStatusWith = ({ db: db2 }) => {
-  return async ({ processes }) => {
-    const tasks = [];
-    for (const processId of processes) {
-      const hydrations = await db2.getHydrationsByProcessId(processId);
-      for (const hydration of hydrations) {
-        tasks.push({ processId, url: hydration.url });
-      }
-    }
-    const concurrency = 10;
-    for (let i = 0; i < tasks.length; i += concurrency) {
-      const batch = tasks.slice(i, i + concurrency);
-      await Promise.all(
-        batch.map(async ({ processId, url }) => {
-          const newStatus = await checkStatus({ id: processId, url });
-          await new Promise((resolve) => setTimeout(resolve, 50));
-          console.log(processId, url, newStatus);
-          await db2.saveHydration(processId, url, newStatus);
-        })
-      );
-    }
-  };
-};
 
 // server/worker.ts
 if (!parentPort) {
@@ -1844,11 +1733,6 @@ if (!process.env.DATABASE_PATH) {
 var db = await createPostgresClient({
   url: process.env.DATABASE_PATH
 });
-var loadProcesses = loadProcessesWith({ db });
-var hydrate = hydrateWith({ db });
-var cron = cronWith({ db });
-var refreshStatus = refreshStatusWith({ db });
-var readProcesses = readProcessesWith({ db });
 console.log("[Worker] Worker thread initialized");
 var isRunning = false;
 var port = parentPort;
@@ -1896,7 +1780,8 @@ async function saveHydrations(message) {
   console.log(`[Worker] Queued hydration job with ${processes.length} processes.`);
 }
 var runningPromises = /* @__PURE__ */ new Set();
-var MAX_CONCURRENT = 100;
+var MAX = process.env.MAX_CONCURRENT_HYDRATIONS || "100";
+var MAX_CONCURRENT = parseInt(MAX);
 var queueHydration = async (processId, url) => {
   while (runningPromises.size >= MAX_CONCURRENT) {
     if (runningPromises.size > 0) {

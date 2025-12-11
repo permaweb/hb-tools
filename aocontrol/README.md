@@ -184,7 +184,8 @@ curl -X POST http://localhost:3001/api/resolve-unpushed \
     -H "Content-Type: application/json" \
     -H "Authorization: Bearer $TOKEN" \
     -d '{
-      "txs": ["IURFsLgLv9lan6LLBUMAOeJbLT25uLSxnS3OY7dWs_0"]
+      "txs": ["IURFsLgLv9lan6LLBUMAOeJbLT25uLSxnS3OY7dWs_0"],
+      "processes": ["pid"]
     }'
 ```
 

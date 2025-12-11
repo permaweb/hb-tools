@@ -196,6 +196,8 @@ export async function missingNonceReport(txs: string[], customCu: boolean): Prom
           },
           body
         }).then(res => res.json())
+
+        console.log(gqlResponse)
   
         const processId = gqlResponse?.data?.transactions?.edges[0].node.recipient
   

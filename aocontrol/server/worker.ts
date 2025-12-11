@@ -1,4 +1,3 @@
-import 'dotenv/config'
 import { parentPort, MessagePort } from 'worker_threads';
 import { createPostgresClient } from './db.js';
 import {

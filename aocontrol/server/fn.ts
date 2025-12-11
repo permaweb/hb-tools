@@ -2,7 +2,6 @@ import { DbClient, Hydration, PaginationOptions, ProcessWithTimestamp } from './
 import { TokenHydrator } from './hydrator/hydrator.js'
 import { ErrorHandler } from './hydrator/errors.js'
 import { Logger } from './hydrator/logger.js'
-import { randomBytes } from 'crypto'
 
 export type Deps = {
     db: DbClient

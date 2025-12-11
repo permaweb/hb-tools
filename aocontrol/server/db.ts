@@ -276,7 +276,13 @@ export async function createPostgresClient ({ url }: PostgresClientConfig): Prom
         'SELECT id, token, processId, label, timestamp FROM permissions WHERE token = $1',
         [token]
       )
-      return result.rows as Permission[]
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        token: row.token,
+        processId: row.processid,
+        label: row.label,
+        timestamp: parseInt(row.timestamp)
+      }))
     },
     getAllProcessIds: async (pagination?: PaginationOptions) => {
       let sql = 'SELECT processId FROM processes'
