@@ -3,8 +3,16 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { Worker } from 'worker_threads';
 import { createPostgresClient } from './db.js'
-import { loadProcessesWith, hydrateWith, cronWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith, rollingHydrationWith, getActiveOperations } from './fn.js'
+import {
+  loadProcessesWith,
+  hydrateWith,
+  cronWith,
+  refreshStatusWith,
+  readProcessesWith,
+  summaryWith
+} from './fn.js'
 import { resolveUnpushedWith, readRepushesWith } from './fn-legacy.js'
 import { authRequestWith } from './auth.ts'
 
@@ -13,6 +21,8 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+let worker: Worker;
 
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
@@ -26,6 +36,22 @@ async function startServer() {
     url: process.env.DATABASE_PATH
   })
 
+  // Initialize worker thread (worker.js is built from worker.ts via esbuild)
+  const workerPath = path.join(__dirname, 'worker.js');
+  worker = new Worker(workerPath);
+
+  worker.on('message', (message) => {
+    console.log('[Server] Received from worker:', message);
+  });
+
+  worker.on('error', (error) => {
+    console.error('[Server] Worker error:', error);
+  });
+
+  worker.on('exit', (code) => {
+    console.log('[Server] Worker exited with code:', code);
+  });
+
   const authRequest = authRequestWith({ db })
   const loadProcesses = loadProcessesWith({ db })
   const hydrate = hydrateWith({ db })
@@ -33,12 +59,10 @@ async function startServer() {
   const refreshStatus = refreshStatusWith({ db })
   const readProcesses = readProcessesWith({ db })
   const summary = summaryWith({ db })
-  const cleanBadProcs = cleanBadProcsWith({ db })
-  const rollingHydration = rollingHydrationWith({ db })
   const resolveUnpushed = resolveUnpushedWith({ db })
   const readRepushes = readRepushesWith({ db })
 
-  app.post('/api/load', async (req, res) => {
+app.post('/api/load', async (req, res) => {
   try {
     // Auth check
     const auth = await authRequest(req)
@@ -54,6 +78,31 @@ async function startServer() {
     res.json({ success: true, message: `Loaded ${processes.length} processes` })
   } catch (error) {
     console.error('Error loading processes:', error)
+    res.status(500).json({ error: (error as Error).message })
+  }
+})
+
+app.post('/api/queue-hydrations', async (req, res) => {
+  try {
+    // Auth check
+    const auth = await authRequest(req)
+    if (!auth.authorized) {
+      return res.status(401).json({ error: auth.error })
+    }
+
+    const { processes, hydrations } = req.body
+    if (!processes || !Array.isArray(processes)) {
+      return res.status(400).json({ error: 'processes array is required' })
+    }
+
+    worker.postMessage({
+      type: 'queue-hydrations',
+      payload: { processes, hydrations }
+    });
+
+    res.json({ success: true, message: `Queued hydration for ${processes.length} processes` })
+  } catch (error) {
+    console.error('Error queueing hydration:', error)
     res.status(500).json({ error: (error as Error).message })
   }
 })
@@ -206,48 +255,6 @@ app.get('/api/processes', async (req, res) => {
     }
   })
 
-  app.post('/api/clean-bad-procs', async (req, res) => {
-    try {
-      // Auth check
-      const auth = await authRequest(req)
-      if (!auth.authorized) {
-        return res.status(401).json({ error: auth.error })
-      }
-
-      const result = await cleanBadProcs()
-      res.json(result)
-    } catch (error) {
-      console.error('Error cleaning bad processes:', error)
-      res.status(500).json({ error: (error as Error).message })
-    }
-  })
-
-  app.post('/api/rolling-hydration', async (req, res) => {
-    try {
-      // Auth check
-      const auth = await authRequest(req)
-      if (!auth.authorized) {
-        return res.status(401).json({ error: auth.error })
-      }
-
-      const operationId = await rollingHydration()
-      res.json({ success: true, operationId, message: 'Started rolling hydration for NOPROGRESS processes' })
-    } catch (error) {
-      console.error('Error starting rolling hydration:', error)
-      res.status(500).json({ error: (error as Error).message })
-    }
-  })
-
-  app.get('/api/operations', async (_req, res) => {
-    try {
-      const operations = getActiveOperations()
-      res.json({ activeOperations: operations })
-    } catch (error) {
-      console.error('Error getting operations:', error)
-      res.status(500).json({ error: (error as Error).message })
-    }
-  })
-
   app.post('/api/resolve-unpushed', async (req, res) => {
     try {
       // Auth check
@@ -264,6 +271,38 @@ app.get('/api/processes', async (req, res) => {
       res.json({ success: true, message: `Resolved unpushed for ${txs.length} transactions` })
     } catch (error) {
       console.error('Error resolving unpushed:', error)
+      res.status(500).json({ error: (error as Error).message })
+    }
+  })
+
+  app.post('/api/start-hydrations', async (req, res) => {
+    try {
+      // Auth check
+      const auth = await authRequest(req)
+      if (!auth.authorized) {
+        return res.status(401).json({ error: auth.error })
+      }
+
+      worker.postMessage('start-hydrations');
+      res.json({ success: true, message: 'Hydrations started' })
+    } catch (error) {
+      console.error('Error starting hydrations:', error)
+      res.status(500).json({ error: (error as Error).message })
+    }
+  })
+
+  app.post('/api/stop-hydrations', async (req, res) => {
+    try {
+      // Auth check
+      const auth = await authRequest(req)
+      if (!auth.authorized) {
+        return res.status(401).json({ error: auth.error })
+      }
+
+      worker.postMessage('stop-hydrations');
+      res.json({ success: true, message: 'Hydrations stopped' })
+    } catch (error) {
+      console.error('Error stopping hydrations:', error)
       res.status(500).json({ error: (error as Error).message })
     }
   })
