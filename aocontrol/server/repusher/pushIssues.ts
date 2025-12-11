@@ -112,11 +112,11 @@ export async function checkIfPushed(messages: Message[]): Promise<CheckIfPushedR
         const tags = pushedMessage.Tags
         let tagsStr = "[\n"
         tags.forEach(t => {
-          tagsStr += `{ name: "${t.name}", values: ["${t.value}"] }\n`
+          tagsStr += `{ name: "${t.name}", values: ["${String(t.value).replace(/"/g, '\\"')}"] }\n`
         })
         tagsStr += "]"
         const query = getQuery(tagsStr, target)
-        const gqlResponse: GraphQLResponse = await fetch(`https://ao-search-gateway.goldsky.com/graphql`, {
+        const gqlResponse: GraphQLResponse = await fetch(`https://arweave.net/graphql`, {
           method: "POST",
           body: JSON.stringify({query})
         }).then(res => { return res.json() })
@@ -176,7 +176,12 @@ query GetMessageByTags {
 }
 `
 
-export async function missingNonceReport(txs: string[]): Promise<CheckIfPushedResult> {
+const CUSTOM_CU_MAP: any = {
+  "qNvAoz0TgcH7DMg8BCVn8jF32QH5L6T29VjHxhHqqGE": "cu6201.ao-testnet.xyz",
+  "0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc": "cu6002.ao-testnet.xyz"
+}
+
+export async function missingNonceReport(txs: string[], customCu: boolean): Promise<CheckIfPushedResult> {
     const messages: Message[] = []
     const errors: any[] = []
     for(let i = 0; i < txs.length; i++) {
@@ -184,7 +189,7 @@ export async function missingNonceReport(txs: string[]): Promise<CheckIfPushedRe
         const messageId = txs[i]
         const query = getQueryById(messageId)
         const body = JSON.stringify({query})
-        const gqlResponse: GraphQLResponse = await fetch(`https://ao-search-gateway.goldsky.com/graphql`, {
+        const gqlResponse: GraphQLResponse = await fetch(`https://arweave.net/graphql`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
@@ -198,7 +203,7 @@ export async function missingNonceReport(txs: string[]): Promise<CheckIfPushedRe
           messages.push({ 
             messageId, 
             processId, 
-            cu: 'cu.ao-testnet.xyz'
+            cu: customCu && CUSTOM_CU_MAP[processId] ? CUSTOM_CU_MAP[processId] : 'cu.ao-testnet.xyz'
           })
         }
       } catch (e) {

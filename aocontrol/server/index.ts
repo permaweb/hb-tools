@@ -3,7 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { createSqliteClient } from './db.js'
+import { createPostgresClient } from './db.js'
 import { loadProcessesWith, hydrateWith, cronWith, refreshStatusWith, readProcessesWith, summaryWith, cleanBadProcsWith, rollingHydrationWith, getActiveOperations } from './fn.js'
 import { resolveUnpushedWith, readRepushesWith } from './fn-legacy.js'
 import { authRequestWith } from './auth.ts'
@@ -22,7 +22,7 @@ async function startServer() {
     throw new Error('DATABASE_PATH environment variable is required')
   }
 
-  const db = await createSqliteClient({
+  const db = await createPostgresClient({
     url: process.env.DATABASE_PATH
   })
 
@@ -256,11 +256,11 @@ app.get('/api/processes', async (req, res) => {
         return res.status(401).json({ error: auth.error })
       }
 
-      const { txs } = req.body
+      const { txs, custom } = req.body
       if (!txs || !Array.isArray(txs)) {
         return res.status(400).json({ error: 'txs array is required' })
       }
-      await resolveUnpushed(txs)
+      await resolveUnpushed(txs, custom)
       res.json({ success: true, message: `Resolved unpushed for ${txs.length} transactions` })
     } catch (error) {
       console.error('Error resolving unpushed:', error)
