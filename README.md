@@ -32,6 +32,7 @@ Each group must include:
 - `url` - HyperBEAM URL (e.g., `http://localhost:8734`)
 
 Each field specified in `defaults` can be overridden.
+- `authority` - Address of the compute node for new processes
 - `schedulerAddress` - Scheduler process address for handling message ordering
 - `aosModule` - Process module to use when spawning
 - `scripts` - Array of script filenames to run with `run-group.js` (optional)

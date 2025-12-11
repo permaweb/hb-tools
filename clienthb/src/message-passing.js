@@ -14,13 +14,12 @@ function log(...args) {
 }
 
 async function spawnNew(ao, SIGNER) {
-  const MAINNET_SCHEDULER = flags.scheduler || groupConfig.schedulerAddress;
+  groupConfig = { ...config.defaults, ...config[group] };
 
   let spawnArgs = {
     module: groupConfig.aosModule,
     authority: groupConfig.authority,
     tags: [
-      { name: 'Authority', value: MAINNET_SCHEDULER },
       { name: 'Name', value: Date.now().toString() }
     ]
   };
@@ -122,6 +121,14 @@ async function run() {
       tags: [{ name: 'Action', value: 'Ping' }],
       signer: SIGNER,
     });
+
+    const result = await ao.result({
+      process: pid1,
+      message: message
+    });
+
+    console.log(result)
+
     expect(message).toEqualType('number');
     return message;
   }).then(({ result, duration }) => {
@@ -140,6 +147,8 @@ async function run() {
       process: pid2,
       message: message
     });
+
+    console.log(result)
 
     expect(result.Output.data).toEqual('Received Pong')
     return result.Output.data;

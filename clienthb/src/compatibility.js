@@ -45,6 +45,7 @@ async function runConnect(mode) {
     };
 
     spawnArgs.module = groupConfig.aosModule;
+    spawnArgs.authority = groupConfig.authority;
     
     if (!useMainnet) {
         spawnArgs.scheduler = '_GQ33BkPtZrqxA84vM8Zk-N2aO0toNNu_C-l-rawrBA';

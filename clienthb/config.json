@@ -1,5 +1,6 @@
 {
   "defaults": {
+    "authority": "n_XZJhUnmldNFo4dhajoPZWhBXuJk-OcQr5JQ49c4Zo",
     "schedulerAddress": "n_XZJhUnmldNFo4dhajoPZWhBXuJk-OcQr5JQ49c4Zo",
     "aosModule": "ISShJH1ij-hPPt9St5UFFr_8Ys3Kj5cyg7zrMGt7H9s",
     "scripts": [
@@ -13,25 +14,15 @@
   },
   "local_basic": {
     "url": "http://localhost:8734",
+    "authority": "mYJTM8VpIibDLuyGLQTcbcPy-LeOY48qzECADTUYfWc",
     "schedulerAddress": "mYJTM8VpIibDLuyGLQTcbcPy-LeOY48qzECADTUYfWc"
   },
   "remote_schedule_basic": {
     "url": "http://localhost:8734",
     "authority": "mYJTM8VpIibDLuyGLQTcbcPy-LeOY48qzECADTUYfWc"
   },
-  "dev_basic": {
-    "url": "https://workshop.forward.computer"
-  },
-  "production_basic": {
-    "url": "https://forward.computer"
-  },
-  "portal_basic": {
-    "url": "https://hb.portalinto.com"
-  },
-  "push_1": {
-    "url": "https://push-1.forward.computer"
-  },
-  "app_1": {
-    "url": "https://app-1.forward.computer"
+  "push": {
+    "url": "https://push.forward.computer",
+    "authority": "YUsEnCSlxvOMxRd1qG6rkaPwMgi3xOorfDfYJoMDndA"
   }
 }
