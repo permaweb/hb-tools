@@ -73,6 +73,7 @@ export interface DbClient {
   getAllProcessesWithTimestamp: (pagination?: PaginationOptions) => Promise<ProcessWithTimestamp[]>
   getProcessesByQueryWithTimestamp: (query: string, pagination?: PaginationOptions) => Promise<ProcessWithTimestamp[]>
   getHydrationsByProcessId: (processId: string, query?: string) => Promise<Hydration[]>
+  getHydrationsByStatus: (status: string, limit?: number) => Promise<Array<Hydration & { processId: string }>>
   getRepushes: (query?: string, pagination?: PaginationOptions) => Promise<Repush[]>
   getStatusCounts: () => Promise<Record<string, number>>
   getRepushStatusCounts: () => Promise<Record<string, number>>
@@ -275,7 +276,13 @@ export async function createPostgresClient ({ url }: PostgresClientConfig): Prom
         'SELECT id, token, processId, label, timestamp FROM permissions WHERE token = $1',
         [token]
       )
-      return result.rows as Permission[]
+      return result.rows.map((row: any) => ({
+        id: row.id,
+        token: row.token,
+        processId: row.processid,
+        label: row.label,
+        timestamp: parseInt(row.timestamp)
+      }))
     },
     getAllProcessIds: async (pagination?: PaginationOptions) => {
       let sql = 'SELECT processId FROM processes'
@@ -386,6 +393,22 @@ export async function createPostgresClient ({ url }: PostgresClientConfig): Prom
       }
       const result = await pool.query('SELECT url, status FROM hydrations WHERE processId = $1', [processId])
       return result.rows as Hydration[]
+    },
+    getHydrationsByStatus: async (status: string, limit?: number) => {
+      let sql = 'SELECT processId, url, status FROM hydrations WHERE status = $1 ORDER BY timestamp'
+      const params: any[] = [status]
+
+      if (limit) {
+        sql += ' LIMIT $2'
+        params.push(limit)
+      }
+
+      const result = await pool.query(sql, params)
+      return result.rows.map((row: any) => ({
+        processId: row.processid,
+        url: row.url,
+        status: row.status
+      }))
     },
     getRepushes: async (query?: string, pagination?: PaginationOptions) => {
       let sql = 'SELECT processId, messageId, status, reasons, timestamp FROM repushes'
