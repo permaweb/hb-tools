@@ -152,7 +152,7 @@ async function runScripts() {
   const durationSec = (durationMs / 1000).toFixed(2);
 
   console.log(`\nTotal Duration: ${durationMs}ms (${durationSec}s)`);
-  console.log(`Tests: ${successful.length}/${scripts.length} successful`);
+  console.log(`Tests: ${successful.length}/${scripts.length} successful, ${failed.length} failed`);
 
   const totalTests = totalTestsPassed + totalTestsFailed;
   if (totalTests > 0) {

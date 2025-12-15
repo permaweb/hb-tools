@@ -24,5 +24,9 @@
   "push": {
     "url": "https://push.forward.computer",
     "authority": "YUsEnCSlxvOMxRd1qG6rkaPwMgi3xOorfDfYJoMDndA"
+  },
+  "push_1": {
+    "url": "https://push-1.forward.computer",
+    "authority": "YUsEnCSlxvOMxRd1qG6rkaPwMgi3xOorfDfYJoMDndA"
   }
 }

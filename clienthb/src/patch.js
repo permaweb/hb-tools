@@ -22,8 +22,6 @@ function log(...args) {
     console.log(`\x1b[36m[HB Client Patch]\x1b[0m`, ...args);
 }
 
-const indexLengths = [1000, 5000, 10_000, 25_000];
-
 (async function () {
     const runner = createTestRunner();
     runner.start();
@@ -71,9 +69,9 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
     await runner.test(async () => {
         const t0Fetch = performance.now();
 
-        const response = await fetch(`${MAINNET_URL}/${processId}/now/zone?require-codec=application/json&accept-bundle=true`);
+        const response = await fetch(`${MAINNET_URL}/${processId}/now?require-codec=application/json&accept-bundle=true`);
         const json = await response.json();
-        const data = json.body;
+        const data = json?.zone;
 
         expect(response.ok).toEqual(true);
         expect(data.length).toEqual(10);

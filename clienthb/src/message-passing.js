@@ -122,13 +122,6 @@ async function run() {
       signer: SIGNER,
     });
 
-    const result = await ao.result({
-      process: pid1,
-      message: message
-    });
-
-    console.log(result)
-
     expect(message).toEqualType('number');
     return message;
   }).then(({ result, duration }) => {
@@ -147,8 +140,6 @@ async function run() {
       process: pid2,
       message: message
     });
-
-    console.log(result)
 
     expect(result.Output.data).toEqual('Received Pong')
     return result.Output.data;

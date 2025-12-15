@@ -8,7 +8,7 @@ const configPath = flags.config || 'config.json';
 const config = JSON.parse(fs.readFileSync(configPath));
 
 if (!config[group]) {
-  throw new Error(`Group '${group}' not found in ${configPath}`);
+    throw new Error(`Group '${group}' not found in ${configPath}`);
 }
 
 const groupConfig = { ...config.defaults, ...config[group] };
@@ -22,7 +22,7 @@ function log(...args) {
     console.log(`\x1b[36m[HB Client Patch]\x1b[0m`, ...args);
 }
 
-const indexLengths = [1000, 5000, 10_000, 25_000];
+const indexLengths = [500, 1000, 2500, 5000];
 
 (async function () {
     const runner = createTestRunner();
@@ -58,7 +58,7 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
             Index = Index or {}
             Handlers.add('Set-Index', 'Set-Index', function(msg)
                 Index = json.decode(msg.Data)
-                Send({ device = 'patch@1.0', zone = json.encode(Index) })
+                Send({ device = 'patch@1.0', zone = Index })
             end)
                 `,
                 signer: SIGNER,
@@ -93,7 +93,7 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
         });
 
         await runner.test(async () => {
-            const response = await fetch(`${MAINNET_URL}/${processId}/now/zone`);
+            const response = await fetch(`${MAINNET_URL}/${processId}/now?require-codec=application/json&accept-bundle=true`);
             expect(response.ok).toEqual(true);
 
             const buf = Buffer.from(await response.arrayBuffer());
@@ -101,6 +101,11 @@ const indexLengths = [1000, 5000, 10_000, 25_000];
             const sizeBytes = buf.length;
             const sizeMB = (sizeBytes / (1024 * 1024)).toFixed(2);
             const sizeGB = (sizeBytes / (1024 * 1024 * 1024)).toFixed(2);
+
+            const json = JSON.parse(buf.toString('utf8'));
+            const data = json?.zone?.Index;
+
+            expect(data.length).toEqual(length);
 
             return { sizeBytes, sizeMB, sizeGB };
         }).then(({ result, duration }) => {
