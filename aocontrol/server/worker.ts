@@ -94,7 +94,7 @@ async function saveHydrations(message: QueueHydrationsMessage) {
 
 // Continuously process INIT hydrations with MAX_CONCURRENT limit
 const runningPromises = new Set<Promise<void>>()
-const MAX = process.env.MAX_CONCURRENT_HYDRATIONS || '100'
+const MAX = process.env.MAX_CONCURRENT_HYDRATIONS || '10'
 const MAX_CONCURRENT = parseInt(MAX)
 
 const queueHydration = async (processId: string, url: string) => {
