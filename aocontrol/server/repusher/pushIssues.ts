@@ -114,6 +114,7 @@ export async function checkIfPushed(messages: Message[]): Promise<CheckIfPushedR
         tags.forEach(t => {
           tagsStr += `{ name: "${t.name}", values: ["${String(t.value).replace(/"/g, '\\"')}"] }\n`
         })
+        tagsStr += `{ name: "From-Process", values: ["${processId}"] }\n`
         tagsStr += "]"
         const query = getQuery(tagsStr, target)
         const gqlResponse: GraphQLResponse = await fetch(`https://arweave.net/graphql`, {
