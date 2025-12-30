@@ -84,6 +84,77 @@ function log(...args) {
         log(`Fetch: ${durationMsFetch}ms (${durationSecFetch}s)`);
     });
 
+    await runner.test(async () => {
+        const patchMessage = await ao.message({
+            process: processId,
+            tags: [{ name: 'Action', value: 'Eval' }],
+            data: `
+            Roles = Roles or {
+                ["VkeIjnQ5O9umA8wpOoRUQMd_Q2IwzFFL33LoCfUSZws"] = {
+                    Roles = { "Admin" },
+                    Type = "process"
+                },
+                ["bAJAZFUgwsPgJtVlSy_yJM4QneVyDfaroR6_Aykn-dk"] = {
+                    Roles = { "Admin" },
+                    Type = "process"
+                },
+                ["wCSXTL1g1Entfpv5iyPNHxJlk9N6MfhYve2reKFJWTg"] = {
+                    Roles = { "Admin" },
+                    Type = "wallet"
+                },
+                ["_f4Si-435MAM9fpn83gBjwfY0d1DZTeKNNZ-LpOvngc"] = {
+                    Roles = { "Admin" },
+                    Type = "wallet"
+                }
+            }
+            
+            Permissions = Permissions or {
+                ['Add-Index-Id'] = {
+                    Roles = { 'Admin' }
+                },
+                ['Add-Index-Request'] = {
+                    Roles = { 'Admin', 'Contributor', 'ExternalContributor' }
+                }
+            }
+            
+            Send({ device = 'patch@1.0', users = { Roles = Roles, Permissions = Permissions } })
+            
+            Roles = {
+                ["_f4Si-435MAM9fpn83gBjwfY0d1DZTeKNNZ-LpOvngc"] = {
+                    Roles = { "Admin" },
+                    Type = "wallet"
+                }
+            }
+            
+            Send({ device = 'patch@1.0', users = 'Resetting' })
+            Send({ device = 'patch@1.0', users = { Roles = Roles, Permissions = Permissions } })
+            `,
+            signer: SIGNER,
+        });
+        expect(patchMessage).toEqualType('number');
+        return patchMessage;
+    }).then(({ result, duration }) => {
+        log(`Patch | Message: ${result} (${duration}s)`);
+    });
+
+    await runner.test(async () => {
+        const t0Fetch = performance.now();
+
+        const response = await fetch(`${MAINNET_URL}/${processId}/now?require-codec=application/json&accept-bundle=true`);
+        const json = await response.json();
+        const data = json?.users;
+
+        expect(response.ok).toEqual(true);
+        expect(Object.keys(data.Roles).length).toEqual(2); /* One role plus a commitments key */
+
+        const t1Fetch = performance.now();
+
+        const durationMsFetch = Math.round(t1Fetch - t0Fetch);
+        const durationSecFetch = (durationMsFetch / 1000).toFixed(2);
+
+        log(`Fetch: ${durationMsFetch}ms (${durationSecFetch}s)`);
+    });
+
     const exitCode = runner.getSummary('Patch Tests');
     process.exit(exitCode);
 })();

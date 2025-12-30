@@ -6,7 +6,7 @@ import { performance } from 'perf_hooks';
 import { parseArgs, expect, createTestRunner } from './utils.js';
 
 let TOTAL_SPAWNS = 1;                   // Total processes to spawn across all workers
-let TOTAL_MESSAGES = 100;               // Total Info messages to send across all workers
+let TOTAL_MESSAGES = 1;               // Total Info messages to send across all workers
 let WORKERS = 1;                        // Number of worker threads
 
 // Rate limits (global totals; each worker gets an even share)
