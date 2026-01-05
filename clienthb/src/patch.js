@@ -107,6 +107,13 @@ function log(...args) {
                     Type = "wallet"
                 }
             }
+
+            RoleOptions = RoleOptions or {
+                ['Admin'] = 'Admin',
+                ['Contributor'] = 'Contributor',
+                ['ExternalContributor'] = 'ExternalContributor',
+                ['Moderator'] = 'Moderator',
+            }
             
             Permissions = Permissions or {
                 ['Add-Index-Id'] = {
@@ -117,7 +124,7 @@ function log(...args) {
                 }
             }
             
-            Send({ device = 'patch@1.0', users = { Roles = Roles, Permissions = Permissions } })
+            Send({ device = 'patch@1.0', users = { Roles = Roles, RoleOptions = RoleOptions, Permissions = Permissions } })
             
             Roles = {
                 ["_f4Si-435MAM9fpn83gBjwfY0d1DZTeKNNZ-LpOvngc"] = {
@@ -127,7 +134,7 @@ function log(...args) {
             }
             
             Send({ device = 'patch@1.0', users = 'Resetting' })
-            Send({ device = 'patch@1.0', users = { Roles = Roles, Permissions = Permissions } })
+            Send({ device = 'patch@1.0', users = { Roles = Roles, RoleOptions = RoleOptions, Permissions = Permissions } })
             `,
             signer: SIGNER,
         });
