@@ -28,5 +28,13 @@
   "push_1": {
     "url": "https://push-1.forward.computer",
     "authority": "YUsEnCSlxvOMxRd1qG6rkaPwMgi3xOorfDfYJoMDndA"
+  },
+  "local_rate_limit": {
+    "url": "http://localhost:8734",
+    "authority": "nQT-W1LZ9d3CdOk0rcwYYmzzpQPMjO96b34KVU6zMH8",
+    "scripts": [
+      "ledger.js",
+      "rate-limits.js"
+    ]
   }
 }

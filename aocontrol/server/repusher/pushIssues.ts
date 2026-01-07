@@ -94,7 +94,7 @@ export async function checkIfPushed(messages: Message[]): Promise<CheckIfPushedR
       console.log(`${i}/${messages.length}`)
       let pushedMessages: PushedMessage[] = []
       const { messageId, processId, cu } = message
-      const url = `https://${cu}/result/${messageId}?process-id=${processId}`
+      const url = (process.env.PORT_1 && process.env.PORT_2) && (cu.indexOf(process.env.PORT_1) > -1 || cu.indexOf(process.env.PORT_2) > -1) ? `http://${cu}/result/${messageId}?process-id=${processId}` : `https://${cu}/result/${messageId}?process-id=${processId}`
       console.log(`Fetching ${url}`)
       const response: { Messages?: PushedMessage[], [key: string]: any } = await fetch(url, {
           method: "GET",
@@ -179,7 +179,7 @@ query GetMessageByTags {
 
 const CUSTOM_CU_MAP: any = {
   "qNvAoz0TgcH7DMg8BCVn8jF32QH5L6T29VjHxhHqqGE": "cu6201.ao-testnet.xyz",
-  "0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc": "cu6002.ao-testnet.xyz"
+  "0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc": "cu6002.ao-testnet.xyz:6464"
 }
 
 export async function missingNonceReport(txs: string[], customCu: boolean): Promise<CheckIfPushedResult> {
