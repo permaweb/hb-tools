@@ -39,7 +39,7 @@ export const authRequestWith = ({ db }: Deps) => {
     }
 
     if (authToken.type === 'ADMIN') {
-        return { authorized: true }
+        return { authorized: true, isAdmin: true }
     }
 
     /**

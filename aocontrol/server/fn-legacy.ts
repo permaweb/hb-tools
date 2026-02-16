@@ -5,10 +5,10 @@ import { missingNonceReport } from './repusher/pushIssues.js'
 import { pushMu } from './repusher/pushMu.js'
 
 export const resolveUnpushedWith = ({ db }: Deps) => {
-    return async (txs: string[], custom: boolean) => {
-        const report = await missingNonceReport(txs, custom)
+    return async (txs: string[], custom: boolean, skipRepushChecks: boolean = false) => {
+        const report = await missingNonceReport(txs, custom, skipRepushChecks)
         for(let i=0; i< report.unpushedMessages.length; i ++) {
-            const { 
+            const {
                 originalMessageId: messageId,
                 slot: outboxSlot,
                 processId: pid
@@ -19,8 +19,9 @@ export const resolveUnpushedWith = ({ db }: Deps) => {
                 outboxSlot,
                 pid,
                 fileResult: false,
-                customCu: custom
-            }) 
+                customCu: custom,
+                skipRepushChecks
+            })
             .then((res) => res.json())
             .catch((e) => e)
 
@@ -30,7 +31,7 @@ export const resolveUnpushedWith = ({ db }: Deps) => {
         console.log(`Waiting for gateway indexing...`)
         await new Promise(resolve => setTimeout(resolve, 15000))
 
-        const updatedReport = await missingNonceReport(txs, custom)
+        const updatedReport = await missingNonceReport(txs, custom, skipRepushChecks)
 
         for(let i=0; i < txs.length; i++) {
             let txId = txs[i]

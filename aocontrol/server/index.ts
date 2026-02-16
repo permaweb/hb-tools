@@ -263,11 +263,19 @@ app.get('/api/processes', async (req, res) => {
         return res.status(401).json({ error: auth.error })
       }
 
-      const { txs, custom } = req.body
+      const { txs, custom, 'skip-repush-checks': skipRepushChecks } = req.body
       if (!txs || !Array.isArray(txs)) {
         return res.status(400).json({ error: 'txs array is required' })
       }
-      await resolveUnpushed(txs, custom)
+
+      // Check if skip-repush-checks is requested and validate
+      let skipChecks = false
+      if (skipRepushChecks === true && auth.isAdmin && process.env.SKIP_REPUSH_CHECKS_TOKEN) {
+        skipChecks = true
+        console.log('Skip repush checks enabled for this request')
+      }
+
+      await resolveUnpushed(txs, custom, skipChecks)
       res.json({ success: true, message: `Resolved unpushed for ${txs.length} transactions` })
     } catch (error) {
       console.error('Error resolving unpushed:', error)

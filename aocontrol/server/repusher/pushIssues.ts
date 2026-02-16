@@ -84,7 +84,7 @@ query GetMessageByTags {
 }
 `
 
-export async function checkIfPushed(messages: Message[]): Promise<CheckIfPushedResult> {
+export async function checkIfPushed(messages: Message[], skipRepushChecks: boolean = false): Promise<CheckIfPushedResult> {
   let alreadyPushedMessages: AlreadyPushedMessage[] = []
   let unpushedMessages: UnpushedMessage[] = []
   let errors: MessageError[] = []
@@ -110,6 +110,18 @@ export async function checkIfPushed(messages: Message[]): Promise<CheckIfPushedR
         console.log(`(${i}) ${j}/${pushedMessages.length}`)
         const target = pushedMessage.Target
         const tags = pushedMessage.Tags
+
+        // Skip GraphQL checks if skipRepushChecks is enabled
+        if (skipRepushChecks) {
+          console.log(`Skipping GraphQL checks for message ${messageId} slot ${j}`)
+          const deviceTag = pushedMessage.Tags.find((t) => t.name === 'device' && t.value === 'patch@1.0')
+          if(!deviceTag) {
+            unpushedMessages.push({ processId, originalMessageId: messageId, unpushedMessage: pushedMessage, slot: j, target })
+          }
+          j++
+          continue
+        }
+
         let tagsStr = "[\n"
         tags.forEach(t => {
           tagsStr += `{ name: "${t.name}", values: ["${String(t.value).replace(/"/g, '\\"')}"] }\n`
@@ -140,7 +152,7 @@ export async function checkIfPushed(messages: Message[]): Promise<CheckIfPushedR
           }
         } else {
           console.log(pushedMessage)
-          const deviceTag = pushedMessage.Tags.find((t) => t.name === 'device' && t.value === 'patch@1.0') 
+          const deviceTag = pushedMessage.Tags.find((t) => t.name === 'device' && t.value === 'patch@1.0')
           if(deviceTag) {
             continue
           }
@@ -182,7 +194,7 @@ const CUSTOM_CU_MAP: any = {
   "0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc": `cu6002.ao-testnet.xyz`
 }
 
-export async function missingNonceReport(txs: string[], customCu: boolean): Promise<CheckIfPushedResult> {
+export async function missingNonceReport(txs: string[], customCu: boolean, skipRepushChecks: boolean = false): Promise<CheckIfPushedResult> {
     const messages: Message[] = []
     const errors: any[] = []
     for(let i = 0; i < txs.length; i++) {
@@ -217,5 +229,5 @@ export async function missingNonceReport(txs: string[], customCu: boolean): Prom
       await new Promise((resolve) => setTimeout(resolve, 100))
     }
 
-    return await checkIfPushed(messages)
+    return await checkIfPushed(messages, skipRepushChecks)
 }
