@@ -4,7 +4,7 @@ interface PushMuParams {
   pid: string
   fileResult?: boolean
   customCu?: boolean
-  skipRepushChecks?: boolean
+  skipRepushChecksToken?: string
 }
 
 export const pushMu = async ({
@@ -13,9 +13,9 @@ export const pushMu = async ({
   pid,
   fileResult,
   customCu,
-  skipRepushChecks
+  skipRepushChecksToken
 }: PushMuParams): Promise<Response> => {
-  console.log(`Pushing ${process.env.REPUSHER_URL}/push/${messageId}/${outboxSlot}?process-id=${pid}${customCu ? '&custom-cu=true' : ''}${fileResult ? '&result-file=true' : ''}${skipRepushChecks ? ' [SKIP REPUSH CHECKS]' : ''}`)
+  console.log(`Pushing ${process.env.REPUSHER_URL}/push/${messageId}/${outboxSlot}?process-id=${pid}${customCu ? '&custom-cu=true' : ''}${fileResult ? '&result-file=true' : ''}${skipRepushChecksToken ? ' [SKIP REPUSH CHECKS]' : ''}`)
 
   const muUrl = process.env.REPUSHER_URL
   const url = `${muUrl}/push/${messageId}/${outboxSlot}?process-id=${pid}${customCu ? '&custom-cu=true' : ''}${fileResult ? '&result-file=true' : ''}`
@@ -25,9 +25,9 @@ export const pushMu = async ({
     Accept: 'application/json'
   }
 
-  // Add skip-repush-checks-token header if enabled
-  if (skipRepushChecks && process.env.SKIP_REPUSH_CHECKS_TOKEN) {
-    headers['skip-repush-checks-token'] = process.env.SKIP_REPUSH_CHECKS_TOKEN
+  // Add skip-repush-checks-token header if provided
+  if (skipRepushChecksToken) {
+    headers['skip-repush-checks-token'] = skipRepushChecksToken
     console.log('Adding skip-repush-checks-token header to MU request')
   }
 
