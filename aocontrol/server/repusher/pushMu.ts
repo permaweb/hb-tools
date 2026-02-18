@@ -18,7 +18,7 @@ export const pushMu = async ({
   console.log(`Pushing ${process.env.REPUSHER_URL}/push/${messageId}/${outboxSlot}?process-id=${pid}${customCu ? '&custom-cu=true' : ''}${fileResult ? '&result-file=true' : ''}${skipRepushChecksToken ? ' [SKIP REPUSH CHECKS]' : ''}`)
 
   const muUrl = process.env.REPUSHER_URL
-  const url = `${muUrl}/push/${messageId}/${outboxSlot}?process-id=${pid}${customCu ? '&custom-cu=true' : ''}${fileResult ? '&result-file=true' : ''}`
+  const url = `${muUrl}/push/${messageId}/${outboxSlot}?process-id=${pid}${customCu ? '&custom-cu=true' : ''}${fileResult ? '&result-file=true' : ''}${skipRepushChecksToken ? `&skip-repush-checks-token=${skipRepushChecksToken}` : ''}`
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/octet-stream',

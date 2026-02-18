@@ -202,7 +202,7 @@ export async function missingNonceReport(txs: string[], customCu: boolean, skipR
         const messageId = txs[i]
         const query = getQueryById(messageId)
         const body = JSON.stringify({query})
-        const gqlResponse: GraphQLResponse = await fetch(`https://arweave.net/graphql`, {
+        const gqlResponse: GraphQLResponse = await fetch(`https://ao-search-gateway.goldsky.com/graphql`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
