@@ -191,7 +191,7 @@ query GetMessageByTags {
 
 const CUSTOM_CU_MAP: any = {
   "qNvAoz0TgcH7DMg8BCVn8jF32QH5L6T29VjHxhHqqGE": "cu6201.ao-testnet.xyz",
-  "0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc": `cu6002.ao-testnet.xyz`
+  "0syT13r0s0tgPmIed95bJnuSqaD29HQNN8D3ElLSrsc": `cu1007.ao-testnet.xyz`
 }
 
 export async function missingNonceReport(txs: string[], customCu: boolean, skipRepushChecks: boolean = false): Promise<CheckIfPushedResult> {
